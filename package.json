@@ -1,0 +1,52 @@
+{
+	"name": "bot",
+	"version": "1.0.0",
+	"description": "The Basemind Bot",
+	"scripts": {
+		"build": "rimraf dist && tsc --project tsconfig.build.json",
+		"watch": "tsc -w --project tsconfig.build.json",
+		"clean": "rimraf dist",
+		"prestart": "pnpm run clean && pnpm run build",
+		"start": "func start",
+		"test": "vitest",
+		"format": "prettier --write .",
+		"prepare": "husky install",
+		"postinstall": "husky install",
+		"lint": "eslint --fix '**/*.{ts,tsx}'"
+	},
+	"dependencies": {
+		"@azure/functions": "^4.2.0"
+	},
+	"devDependencies": {
+		"@commitlint/cli": "^18.6.0",
+		"@commitlint/config-conventional": "^18.6.0",
+		"@prettier/plugin-xml": "^3.2.2",
+		"@tool-belt/eslint-config": "^5.0.5",
+		"@types/node": "^20.11.13",
+		"@typescript-eslint/eslint-plugin": "^6.20.0",
+		"@typescript-eslint/parser": "^6.20.0",
+		"@vitest/coverage-v8": "^1.2.2",
+		"eslint": "^8.56.0",
+		"eslint-import-resolver-typescript": "^3.6.1",
+		"eslint-plugin-vitest": "^0.3.21",
+		"husky": "^9.0.7",
+		"lint-staged": "^15.2.1",
+		"prettier": "^3.2.4",
+		"prettier-plugin-sort-json": "^3.1.0",
+		"rimraf": "^5.0.5",
+		"typescript": "^5.3.3",
+		"vite-tsconfig-paths": "^4.3.1",
+		"vitest": "^1.2.2"
+	},
+	"main": "dist/src/functions/*.js",
+	"lint-staged": {
+		"*.ts": "eslint --fix",
+		"*.{ts,js,md,json,yaml,yml,xml}": "prettier --write"
+	},
+	"engines": {
+		"yarn": "please-use-pnpm",
+		"npm": "please-use-pnpm",
+		"pnpm": ">=8.0.0",
+		"node": ">=20.0.0"
+	}
+}

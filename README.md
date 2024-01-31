@@ -1,2 +1,3 @@
 # bot
-The BaseMind WhatsApp chatbot 
+
+The BaseMind WhatsApp chatbot

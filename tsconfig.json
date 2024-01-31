@@ -1,0 +1,25 @@
+{
+	"compilerOptions": {
+		"outDir": "dist",
+		"rootDir": ".",
+		"skipLibCheck": true,
+		"strict": true,
+		"strictNullChecks": true,
+		"esModuleInterop": true,
+		"module": "NodeNext",
+		"allowSyntheticDefaultImports": true,
+		"strictFunctionTypes": true,
+		"moduleResolution": "NodeNext",
+		"resolveJsonModule": true,
+		"target": "ESNext",
+		"incremental": true,
+		"declaration": false,
+		"paths": {
+			"@/*": ["./src/*"],
+			"tests/*": ["./tests/*"],
+		},
+		"types": ["vitest/globals"],
+		"allowJs": false,
+	},
+	"exclude": ["node_modules"],
+}
