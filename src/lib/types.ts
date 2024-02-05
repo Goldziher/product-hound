@@ -11,7 +11,7 @@ export interface WhatsAppTextMessage {
 export interface WhatsAppImageMessage {
 	from: string;
 	id: string;
-	image?: {
+	image: {
 		id: string;
 		mime_type: string;
 		sha256: string;
