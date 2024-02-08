@@ -9,5 +9,5 @@ __queuestorage__
 tests/
 local.settings.json
 tsconfig.*
-vitest.config.mts
-commitlint.config.js
+vitest.config.ts
+commitlint.config.cjs

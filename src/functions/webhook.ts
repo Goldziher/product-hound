@@ -5,8 +5,8 @@ import {
 	InvocationContext,
 } from '@azure/functions';
 
-import { WhatsAppWebHookRequest } from '@/lib/types';
-import { parseWhatsAppChatMessages } from '@/lib/utils';
+import { WhatsAppWebHookRequest } from '@/whatsapp/types.js';
+import { parseWhatsAppChatMessages } from '@/whatsapp/utils.js';
 
 export async function handler(
 	request: HttpRequest,

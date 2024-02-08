@@ -1,25 +1,25 @@
 {
 	"compilerOptions": {
+		"allowJs": false,
+		"allowSyntheticDefaultImports": true,
+		"declaration": false,
+		"esModuleInterop": true,
+		"incremental": true,
+		"module": "NodeNext",
+		"moduleResolution": "NodeNext",
 		"outDir": "dist",
+		"paths": {
+			"@/*": ["./src/*"],
+			"testing/*": ["./testing/*"]
+		},
+		"resolveJsonModule": true,
 		"rootDir": ".",
 		"skipLibCheck": true,
 		"strict": true,
-		"strictNullChecks": true,
-		"esModuleInterop": true,
-		"module": "NodeNext",
-		"allowSyntheticDefaultImports": true,
 		"strictFunctionTypes": true,
-		"moduleResolution": "NodeNext",
-		"resolveJsonModule": true,
+		"strictNullChecks": true,
 		"target": "ESNext",
-		"incremental": true,
-		"declaration": false,
-		"paths": {
-			"@/*": ["./src/*"],
-			"tests/*": ["./tests/*"],
-		},
-		"types": ["vitest/globals"],
-		"allowJs": false,
+		"types": ["vitest/globals"]
 	},
-	"exclude": ["node_modules"],
+	"exclude": ["node_modules"]
 }

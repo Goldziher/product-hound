@@ -2,6 +2,7 @@
 	"name": "bot",
 	"version": "1.0.0",
 	"description": "The Basemind Bot",
+	"type": "module",
 	"scripts": {
 		"build": "rimraf dist && tsc --project tsconfig.build.json",
 		"watch": "tsc -w --project tsconfig.build.json",
@@ -15,24 +16,25 @@
 		"lint": "eslint --fix '**/*.{ts,tsx}'"
 	},
 	"dependencies": {
-		"@azure/functions": "^4.2.0"
+		"@azure/functions": "^4.2.0",
+		"@azure/openai": "1.0.0-beta.11"
 	},
 	"devDependencies": {
 		"@commitlint/cli": "^18.6.0",
 		"@commitlint/config-conventional": "^18.6.0",
 		"@faker-js/faker": "^8.4.0",
 		"@prettier/plugin-xml": "^3.2.2",
-		"@tool-belt/eslint-config": "^5.0.5",
+		"@tool-belt/eslint-config": "^5.1.0",
 		"@types/node": "^20.11.16",
-		"@typescript-eslint/eslint-plugin": "^6.20.0",
-		"@typescript-eslint/parser": "^6.20.0",
+		"@typescript-eslint/eslint-plugin": "^6.21.0",
+		"@typescript-eslint/parser": "^6.21.0",
 		"@vitest/coverage-v8": "^1.2.2",
 		"eslint": "^8.56.0",
 		"eslint-import-resolver-typescript": "^3.6.1",
-		"eslint-plugin-vitest": "^0.3.21",
+		"eslint-plugin-vitest": "^0.3.22",
 		"husky": "^9.0.10",
 		"interface-forge": "^1.6.1",
-		"lint-staged": "^15.2.1",
+		"lint-staged": "^15.2.2",
 		"prettier": "^3.2.5",
 		"prettier-plugin-sort-json": "^3.1.0",
 		"rimraf": "^5.0.5",

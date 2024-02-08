@@ -1,4 +1,7 @@
-import { WhatsAppTextMessage, WhatsAppWebHookRequest } from '@/lib/types';
+import {
+	WhatsAppTextMessage,
+	WhatsAppWebHookRequest,
+} from '@/whatsapp/types.js';
 
 export interface ParsedWhatsAppMessage {
 	from: {

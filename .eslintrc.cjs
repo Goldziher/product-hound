@@ -25,7 +25,7 @@ module.exports = {
 	},
 	settings,
 	extends: ['@tool-belt/eslint-config'],
-	ignorePatterns: ['.eslintrc.js', '**/*.js', '*.js'],
+	ignorePatterns: ['.eslintrc.cjs', '**/*.js', '*.js'],
 	rules,
 	overrides: [
 		{

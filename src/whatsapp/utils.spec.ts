@@ -1,17 +1,16 @@
 import { faker } from '@faker-js/faker';
+import {
+	WhatsAppContactFactory,
+	WhatsAppImageMessageFactory,
+	WhatsAppTextMessageFactory,
+} from 'testing/factories.js';
 
 import {
 	WhatsAppMessageChangeValue,
 	WhatsAppWebHookRequest,
 	WhatsAppWebHookRequestEntry,
-} from '@/lib/types';
-import { parseWhatsAppChatMessages } from '@/lib/utils';
-
-import {
-	WhatsAppContactFactory,
-	WhatsAppImageMessageFactory,
-	WhatsAppTextMessageFactory,
-} from '../../testing/factories';
+} from '@/whatsapp/types.js';
+import { parseWhatsAppChatMessages } from '@/whatsapp/utils.js';
 
 describe('utils tests', () => {
 	describe('parseWhatsAppChatMessages tests', () => {
