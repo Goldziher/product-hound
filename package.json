@@ -13,7 +13,7 @@
 		"prestart": "pnpm run clean && pnpm run build",
 		"start": "func start",
 		"test": "vitest",
-		"watch": "concurrently --kill-others \"tsc -w --project tsconfig.build.json\" \"tsc-alias -w\""
+		"watch": "concurrently --kill-others \"tsc -w --project tsconfig.build.json\" \"tsc-alias -w\" \"func start\""
 	},
 	"dependencies": {
 		"@azure/functions": "^4.2.0",

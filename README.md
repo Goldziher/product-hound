@@ -31,7 +31,7 @@
     }
     ```
 
-You will need to replace the value for `<API_KEY>` with a value from the [Azure Portal resource page](https://portal.azure.com/#@tombasemind.onmicrosoft.com/resource/subscriptions/ed7f0a74-b478-49cd-bbc6-25f24f441e2f/resourceGroups/chatbot/providers/Microsoft.CognitiveServices/accounts/basemind-bot/overview).
+    You will need to replace the value for `<API_KEY>` with a value from the [Azure Portal resource page](https://portal.azure.com/#@tombasemind.onmicrosoft.com/resource/subscriptions/ed7f0a74-b478-49cd-bbc6-25f24f441e2f/resourceGroups/chatbot/providers/Microsoft.CognitiveServices/accounts/basemind-bot/overview).
 
 2. Make sure to use Node 20 (not 21+)! For example, use [NVM](https://github.com/nvm-sh/nvm) and do the following:
 
@@ -45,5 +45,12 @@ You will need to replace the value for `<API_KEY>` with a value from the [Azure 
 3. Start the local development server:
 
     ```shell
+    pnpm build
     pnpm start
+    ```
+
+    Optionally you can run the development server in watch mode, in this case simply do:
+
+    ```shell
+    pnpm watch
     ```
