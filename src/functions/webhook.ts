@@ -5,22 +5,22 @@ import {
 	InvocationContext,
 } from '@azure/functions';
 
-import { WhatsAppWebHookRequest } from '@/whatsapp/types.js';
-import { parseWhatsAppChatMessages } from '@/whatsapp/utils.js';
+import { createProductQuery } from '@/openai/product-query.js';
 
 export async function handler(
 	request: HttpRequest,
 	context: InvocationContext,
 ): Promise<HttpResponseInit> {
-	const payload = (await request.json()) as WhatsAppWebHookRequest;
+	const payload = (await request.json()) as string[];
+	// const data = parseWebhookRequest(payload);
 
-	const parsedMessages = parseWhatsAppChatMessages(payload);
+	const data = await createProductQuery(payload);
 
 	context.log(
-		`received request url: "${request.url}", payload: "${JSON.stringify(parsedMessages)}"`,
+		`received request url: "${request.url}", resulting-query: "${JSON.stringify(data)}"`,
 	);
 
-	return { body: `called with ${parsedMessages}` };
+	return { body: data };
 }
 
 app.http('whatsapp-bot', {

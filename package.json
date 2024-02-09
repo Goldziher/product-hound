@@ -1,19 +1,19 @@
 {
-	"name": "bot",
+	"name": "chatbot",
 	"version": "1.0.0",
-	"description": "The Basemind Bot",
+	"description": "The Basemind Chatbot",
 	"type": "module",
 	"scripts": {
-		"build": "rimraf dist && tsc --project tsconfig.build.json",
-		"watch": "tsc -w --project tsconfig.build.json",
-		"clean": "rimraf dist",
+		"build": "rm -rf dist && tsc --project tsconfig.build.json && tsc-alias",
+		"clean": "rm -rf dist",
+		"format": "prettier --write .",
+		"lint": "eslint --fix '**/*.{ts,tsx}'",
+		"postinstall": "husky",
+		"prepare": "husky",
 		"prestart": "pnpm run clean && pnpm run build",
 		"start": "func start",
 		"test": "vitest",
-		"format": "prettier --write .",
-		"prepare": "husky",
-		"postinstall": "husky",
-		"lint": "eslint --fix '**/*.{ts,tsx}'"
+		"watch": "concurrently --kill-others \"tsc -w --project tsconfig.build.json\" \"tsc-alias -w\""
 	},
 	"dependencies": {
 		"@azure/functions": "^4.2.0",
@@ -29,6 +29,7 @@
 		"@typescript-eslint/eslint-plugin": "^6.21.0",
 		"@typescript-eslint/parser": "^6.21.0",
 		"@vitest/coverage-v8": "^1.2.2",
+		"concurrently": "^8.2.2",
 		"eslint": "^8.56.0",
 		"eslint-import-resolver-typescript": "^3.6.1",
 		"eslint-plugin-vitest": "^0.3.22",
@@ -37,7 +38,7 @@
 		"lint-staged": "^15.2.2",
 		"prettier": "^3.2.5",
 		"prettier-plugin-sort-json": "^3.1.0",
-		"rimraf": "^5.0.5",
+		"tsc-alias": "^1.8.8",
 		"typescript": "^5.3.3",
 		"vite-tsconfig-paths": "^4.3.1",
 		"vitest": "^1.2.2"
@@ -51,6 +52,6 @@
 		"yarn": "please-use-pnpm",
 		"npm": "please-use-pnpm",
 		"pnpm": ">=8.0.0",
-		"node": ">=20.0.0"
+		"node": ">=20.0.0, <21.0.0"
 	}
 }

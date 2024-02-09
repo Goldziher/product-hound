@@ -10,7 +10,7 @@ import {
 	WhatsAppWebHookRequest,
 	WhatsAppWebHookRequestEntry,
 } from '@/whatsapp/types.js';
-import { parseWhatsAppChatMessages } from '@/whatsapp/utils.js';
+import { parseWebhookRequest } from '@/whatsapp/utils.js';
 
 describe('utils tests', () => {
 	describe('parseWhatsAppChatMessages tests', () => {
@@ -46,34 +46,34 @@ describe('utils tests', () => {
 		} satisfies WhatsAppWebHookRequest;
 
 		it('should return an array of parsed messages', () => {
-			const result = parseWhatsAppChatMessages(request);
+			const result = parseWebhookRequest(request);
 			expect(result).toHaveLength(2);
 
-			expect(result[0].from.profileName).toBe(contact.profile.name);
-			expect(result[0].from.whatsAppId).toBe(contact.wa_id);
-			expect(result[0].from.phoneNumberId).toBe(
+			expect(result[0].profileName).toBe(contact.profile.name);
+			expect(result[0].whatsAppId).toBe(contact.wa_id);
+			expect(result[0].phoneNumberId).toBe(
 				changeValues.metadata.phone_number_id,
 			);
-			expect(result[0].from.displayPhoneNumber).toBe(
+			expect(result[0].displayPhoneNumber).toBe(
 				changeValues.metadata.display_phone_number,
 			);
-			expect(result[0].messageId).toBe(textMessages[0].id);
-			expect(result[0].text).toBe(textMessages[0].text.body);
-			expect(result[0].timestamp).toBe(
+			expect(result[0].messages[0].id).toBe(textMessages[0].id);
+			expect(result[0].messages[0].text).toBe(textMessages[0].text.body);
+			expect(result[0].messages[0].timestamp).toBe(
 				Number.parseInt(textMessages[0].timestamp),
 			);
 
-			expect(result[1].from.profileName).toBe(contact.profile.name);
-			expect(result[1].from.whatsAppId).toBe(contact.wa_id);
-			expect(result[1].from.phoneNumberId).toBe(
+			expect(result[1].profileName).toBe(contact.profile.name);
+			expect(result[1].whatsAppId).toBe(contact.wa_id);
+			expect(result[1].phoneNumberId).toBe(
 				changeValues.metadata.phone_number_id,
 			);
-			expect(result[1].from.displayPhoneNumber).toBe(
+			expect(result[1].displayPhoneNumber).toBe(
 				changeValues.metadata.display_phone_number,
 			);
-			expect(result[1].messageId).toBe(textMessages[1].id);
-			expect(result[1].text).toBe(textMessages[1].text.body);
-			expect(result[1].timestamp).toBe(
+			expect(result[1].messages[0].id).toBe(textMessages[1].id);
+			expect(result[1].messages[0].text).toBe(textMessages[1].text.body);
+			expect(result[1].messages[0].timestamp).toBe(
 				Number.parseInt(textMessages[1].timestamp),
 			);
 		});
