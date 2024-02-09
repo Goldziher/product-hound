@@ -45,12 +45,12 @@
 3. Start the local development server:
 
     ```shell
-    pnpm build
-    pnpm start
+    pnpm watch
     ```
 
-    Optionally you can run the development server in watch mode, in this case simply do:
+    Optionally if for some reason you do not want to run in watch mode, do:
 
     ```shell
-    pnpm watch
+     pnpm build
+     pnpm start
     ```
