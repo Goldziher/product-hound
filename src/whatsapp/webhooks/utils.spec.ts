@@ -9,8 +9,8 @@ import {
 	WhatsAppMessageChangeValue,
 	WhatsAppWebHookRequest,
 	WhatsAppWebHookRequestEntry,
-} from '@/whatsapp/types.js';
-import { parseWebhookRequest } from '@/whatsapp/utils.js';
+} from '@/whatsapp/webhooks/types.js';
+import { parseWebhookRequest } from '@/whatsapp/webhooks/utils.js';
 
 describe('utils tests', () => {
 	describe('parseWhatsAppChatMessages tests', () => {

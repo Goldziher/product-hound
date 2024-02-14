@@ -1,7 +1,7 @@
 import {
 	WhatsAppTextMessage,
 	WhatsAppWebHookRequest,
-} from '@/whatsapp/types.js';
+} from '@/whatsapp/webhooks/types.js';
 
 export interface UserMessageMapping {
 	displayPhoneNumber: string;
