@@ -58,7 +58,6 @@ export class WhatsAppClient {
 	/*
 	 * Send a WhatsApp template message
 	 * The template must correlate with a template configured in the developer console.
-	 * See:
 	 * */
 	async template({
 		to,
@@ -81,6 +80,9 @@ export class WhatsAppClient {
 		});
 	}
 
+	/*
+	 * Send a WhatsApp text message
+	 * */
 	async text({ to, text }: { text: WhatsAppTextMessage; to: string }) {
 		return await this.post({
 			data: {
@@ -91,6 +93,10 @@ export class WhatsAppClient {
 		});
 	}
 
+	/*
+	 * Send a WhatsApp reaction message
+	 * Note: reaction is an emoji
+	 * */
 	async reaction({
 		to,
 		reaction,

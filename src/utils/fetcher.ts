@@ -18,7 +18,7 @@ export async function fetcher<T>({
 	data?: Record<string, any> | any[] | string | number;
 	headers?: Record<string, string | undefined>;
 	method: HttpMethod;
-	queryParams?: Record<string, string | undefined>;
+	queryParams?: Record<string, string>;
 	url: string;
 } & Omit<RequestInit, 'method' | 'body'>): Promise<T> {
 	if (!Object.values(HttpMethod).includes(method)) {
@@ -35,12 +35,9 @@ export async function fetcher<T>({
 	}) satisfies RequestInit;
 
 	const path = new URL(url);
-	const searchParams = new URLSearchParams();
-
-	for (const [key, value] of Object.entries(queryParams ?? {})) {
-		searchParams.set(key, value ?? '');
+	if (queryParams) {
+		path.search = new URLSearchParams(queryParams).toString();
 	}
-	path.search = searchParams.toString();
 
 	const response = await fetch(path, request);
 	const body =
@@ -54,8 +51,10 @@ export async function fetcher<T>({
 		}
 
 		throw new ApiError(
-			Reflect.get(body as Record<string, any>, 'message') ??
-				JSON.stringify(body),
+			Reflect.get(
+				body as Record<string, string | undefined>,
+				'message',
+			) ?? JSON.stringify(body),
 			{
 				context: { path, text: await response.text() },
 				statusCode: response.status,

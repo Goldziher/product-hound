@@ -6,7 +6,7 @@ import {
 	WhatsAppImageMessage,
 	WhatsAppReactionMessage,
 	WhatsAppTextMessage,
-} from '@/whatsapp/types.js';
+} from '@/whatsapp/webhooks/types.js';
 
 faker.seed(100);
 

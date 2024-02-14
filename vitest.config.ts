@@ -7,6 +7,7 @@ export default defineConfig({
 		coverage: {
 			exclude: [
 				...(configDefaults.coverage.exclude ?? []),
+				'gen/**/*.*',
 				'testing/**/*.*',
 				'**/*.spec.*',
 			],

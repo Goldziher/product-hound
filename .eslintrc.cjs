@@ -1,6 +1,7 @@
 const rules = {
 	'unicorn/no-array-for-each': 2,
 	'n/no-unpublished-import': 0,
+	'unicorn/filename-case': 0,
 };
 
 const project = ['./tsconfig.json'];
@@ -25,7 +26,7 @@ module.exports = {
 	},
 	settings,
 	extends: ['@tool-belt/eslint-config'],
-	ignorePatterns: ['.eslintrc.cjs', '**/*.js', '*.js'],
+	ignorePatterns: ['.eslintrc.cjs', '**/*.js', '*.js', 'gen/**/*.*'],
 	rules,
 	overrides: [
 		{

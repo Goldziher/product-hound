@@ -32,8 +32,14 @@ export class PermissionError extends Error {
 }
 
 export class ConfigurationError extends Error {
-	constructor(msg: string) {
+	readonly context?: Record<string, any>;
+	constructor(
+		msg: string,
+		context: Record<string, any> | undefined = undefined,
+	) {
 		super(msg);
 		Object.setPrototypeOf(this, ConfigurationError.prototype);
+
+		this.context = context;
 	}
 }
