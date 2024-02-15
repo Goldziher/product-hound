@@ -1,7 +1,6 @@
 const rules = {
 	'unicorn/no-array-for-each': 2,
-	'n/no-unpublished-import': 0,
-	'unicorn/filename-case': 0,
+	'n/no-unpublished-import': 0
 };
 
 const project = ['./tsconfig.json'];

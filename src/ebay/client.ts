@@ -2,6 +2,12 @@ import { InvocationContext } from '@azure/functions';
 import EbayAuthToken from 'ebay-oauth-nodejs-client';
 
 import { HttpMethod } from '@/constants/generic.js';
+import {
+	EbayBrowseItemsErrorResponse,
+	EbayBrowseItemsSuccessResponse,
+} from '@/ebay/types.js';
+import { parseEbayResponse } from '@/ebay/utils.js';
+import { FindProductsParameters } from '@/types.js';
 import { ConfigurationError } from '@/utils/errors.js';
 import { fetcher } from '@/utils/fetcher.js';
 
@@ -11,6 +17,10 @@ const EBAY_BROWSE_API_ITEMS_SUMMARY_ENDPOINT =
 	'/buy/browse/v1/item_summary/search';
 const EBAY_API_BASE_URL_PRODUCTION = 'https://api.ebay.com';
 const EBAY_API_BASE_URL_SANDBOX = 'https://api.sandbox.ebay.com';
+
+const isErrResponse = (
+	value: EbayBrowseItemsErrorResponse | EbayBrowseItemsSuccessResponse,
+): value is EbayBrowseItemsErrorResponse => Reflect.has(value, 'warnings');
 
 export class EbayClient {
 	private readonly ebayCampaignId: string;
@@ -91,15 +101,9 @@ export class EbayClient {
 			minPrice,
 			maxPrice,
 			allowRefurbished,
-		}: {
-			allowRefurbished?: boolean;
-			keywords: string[];
-			maxPrice?: number;
-			minPrice?: number;
-		},
+		}: FindProductsParameters,
 	) {
 		const filters = [
-			//'priceCurrency:USD',
 			'deliveryCountry:US',
 			'buyingOptions:{FIXED_PRICE}',
 			// see: https://developer.ebay.com/devzone/finding/callref/Enums/conditionIdList.html
@@ -119,15 +123,14 @@ export class EbayClient {
 
 		const queryParams = {
 			auto_correct: 'KEYWORD',
+			fieldgroups: 'EXTENDED,MATCHING_ITEMS',
 			filter: filters.join(','),
 			limit: '25',
 			q: keywords.map((v) => v.trim()).join(' '),
 		};
 
-		const { warnings, ...rest } = await fetcher<
-			{
-				warnings?: Record<string, any>[];
-			} & Record<string, any>
+		const response = await fetcher<
+			EbayBrowseItemsSuccessResponse | EbayBrowseItemsErrorResponse
 		>({
 			headers: {
 				Authorization: `Bearer ${await this.getToken()}`,
@@ -139,14 +142,14 @@ export class EbayClient {
 			url: this.baseUrl + EBAY_BROWSE_API_ITEMS_SUMMARY_ENDPOINT,
 		});
 
-		if (warnings) {
-			context.debug('ebay warnings', warnings);
+		if (isErrResponse(response)) {
+			context.debug('ebay warnings', response.warnings);
 			throw new ConfigurationError(
 				'ebay API returned warnings',
-				warnings,
+				response.warnings,
 			);
 		}
 
-		return rest;
+		return parseEbayResponse(response);
 	}
 }

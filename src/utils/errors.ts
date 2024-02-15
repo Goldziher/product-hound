@@ -43,3 +43,16 @@ export class ConfigurationError extends Error {
 		this.context = context;
 	}
 }
+
+export class UnknownError extends Error {
+	readonly context?: Record<string, any>;
+	constructor(
+		msg: string,
+		context: Record<string, any> | undefined = undefined,
+	) {
+		super(msg);
+		Object.setPrototypeOf(this, ConfigurationError.prototype);
+
+		this.context = context;
+	}
+}

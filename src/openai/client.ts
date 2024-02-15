@@ -16,8 +16,13 @@ export function getOpenAIClient(): OpenAIClient {
 		}
 
 		ref.instance = new OpenAIClient(
-			`https://basemind-bot.openai.azure.com/`,
+			`https://basemind-ai-us-west.openai.azure.com/`,
 			new AzureKeyCredential(key),
+			{
+				// TODO: update this as required to the latest version
+				// see: https://learn.microsoft.com/en-us/azure/ai-services/openai/reference
+				apiVersion: '2024-02-15-preview',
+			},
 		);
 	}
 	return ref.instance;
