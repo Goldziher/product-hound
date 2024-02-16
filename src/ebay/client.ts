@@ -126,8 +126,12 @@ export class EbayClient {
 			fieldgroups: 'EXTENDED,MATCHING_ITEMS',
 			filter: filters.join(','),
 			limit: '25',
-			q: keywords.map((v) => v.trim()).join(' '),
+			// the keyword combinations have an OR relation
+			// see: https://developer.ebay.com/api-docs/buy/browse/resources/item_summary/methods/search
+			q: `(${keywords.join(', ')})`,
 		};
+
+		console.log(queryParams.q);
 
 		const response = await fetcher<
 			EbayBrowseItemsSuccessResponse | EbayBrowseItemsErrorResponse
@@ -141,6 +145,7 @@ export class EbayClient {
 			queryParams,
 			url: this.baseUrl + EBAY_BROWSE_API_ITEMS_SUMMARY_ENDPOINT,
 		});
+		console.log(response);
 
 		if (isErrResponse(response)) {
 			context.debug('ebay warnings', response.warnings);

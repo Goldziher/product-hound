@@ -7,6 +7,7 @@ import {
 
 import { EbayClient } from '@/ebay/client.js';
 import { createProductQuery } from '@/openai/product-query.js';
+import { createRecommendationQuery } from '@/openai/recommendation-query.js';
 
 const ebayClient = new EbayClient();
 
@@ -48,13 +49,15 @@ export async function handler(
 			return { status: 400 };
 		}
 
-		context.log(
-			`received request url: "${request.url}", resulting-query: "${JSON.stringify(data)}"`,
+		const { query, ...productSearchParameters } = data;
+
+		const ebayData = await ebayClient.search(
+			context,
+			productSearchParameters,
 		);
 
-		const result = await ebayClient.search(context, data);
+		const result = await createRecommendationQuery(query, ebayData);
 
-		context.log(JSON.stringify(result));
 		return { jsonBody: result, status: 201 };
 	} catch (error) {
 		context.error(error);

@@ -23,8 +23,8 @@ const tools: ChatCompletionsFunctionToolDefinition[] = [
 	{
 		function: {
 			description:
-				'Performs a product search based on specified criteria, including keyword matching with AND logic, and optional filters for refurbished items and price range.',
-			name: 'searchProducts',
+				'Performs a product search based on specified criteria, including keyword matching, and optional filters for refurbished items and price range.',
+			name: 'createProductRecommendation',
 			parameters: {
 				properties: {
 					allowRefurbished: {
@@ -34,7 +34,7 @@ const tools: ChatCompletionsFunctionToolDefinition[] = [
 					},
 					keywords: {
 						description:
-							"Keywords for the search, combined with AND logic (e.g., ['shoes', 'red', 'Nike'] means 'shoes' AND 'red' AND 'Nike').",
+							"Keyword combinations for the search. The strings in the array have an OR relation to each other. e.g. ['red Nike shoes', 'Nike shoes', 'red Nike'] means 'red Nike shoes' OR 'Nike shoes' OR 'red Nike'.",
 						items: { type: 'string' },
 						type: 'array',
 					},
@@ -48,8 +48,13 @@ const tools: ChatCompletionsFunctionToolDefinition[] = [
 						minimum: 0,
 						type: 'number',
 					},
+					query: {
+						description:
+							"The normalized query from the user's input.",
+						type: 'string',
+					},
 				},
-				required: ['keywords'],
+				required: ['keywords', 'query'],
 				type: 'object',
 			},
 		},
@@ -73,18 +78,25 @@ const createProductQuerySystemMessages: ChatRequestMessage[] = [
 	{
 		content: `For meaningful queries, utilize the 'searchProducts' tool with the relevant parameters extracted from the query. Ensure to parse keywords, price range, and any other relevant criteria from the user's input to form the parameters for the function call. 
 
-		For example, if the user input is "Show me the best 4K TVs under $500, preferably with HDR support," you would extract '4K TVs' and 'HDR support' as keywords, and '500' as the maxPrice. Then, construct and invoke the 'searchProducts' function as follows:
+		For example, if the user input is "Show me the best 4K TVs under $500, preferably with HDR support, and what's the weather like?" you would normalized the query by omitting any unnecessary data. You will then extract '500' as the price, and then generate keyword combinations of it. Then, construct and invoke the 'searchProducts' function as follows:
 		
 		{
 		  "type": "function",
 		  "function": {
 			"name": "searchProducts",
 			"parameters": {
-			  "keywords": ["4K TVs", "HDR"],
-			  "maxPrice": 500
+			  "keywords": ["4K HDR TV", "4K TV", "HDR 4k", "TV 4K", "HDR TV", "TV HDR", "4K", "HDR", "TV"],
+			  "maxPrice": 500,
+			  "query": "Show me the best 4K TVs under $500, preferably with HDR support"
 			}
 		  }
 		}
+		
+		Note that the keyword combinations must be given in an order - with the best combination first, then the second-best etc. 
+		The combinations should be exhaustive, as in the above example. E.g. for "recommend shoes size 13 for man, preferably sleek", 
+		the keywords would be ["sleek size 13 man shoes", "size 13 man shoes", "sleek man shoes", "size 13 shoes", "man shoes", "sleek shoes", "shoes].
+		Sleek shoes has a lower priority than man shoes because a man would prefer a shoe that fits him over a sleek shoe, and size 13 has a higher priority 
+		because people dont want shoes that are too large or too small. 
 		
 		Your tool-invoked response would be formatted based on the results returned by the 'searchProducts' function call.`,
 		role: 'system',
@@ -112,7 +124,7 @@ function normalizeUserInputs(queries: string[]): string | null {
 }
 export async function createProductQuery(
 	userInputs: string[],
-): Promise<FindProductsParameters | null> {
+): Promise<(FindProductsParameters & { query: string }) | null> {
 	const userInput = normalizeUserInputs(userInputs);
 	if (!userInput) {
 		return null;
@@ -141,7 +153,7 @@ export async function createProductQuery(
 				function: { arguments: params },
 			},
 		] = message.toolCalls;
-		return JSON.parse(params) as FindProductsParameters;
+		return JSON.parse(params) as FindProductsParameters & { query: string };
 	}
 
 	return null;
