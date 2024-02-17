@@ -22,6 +22,10 @@ interface ItemLocation {
 	country: string;
 }
 
+interface Image {
+	imageUrl: string;
+}
+
 interface ItemSummary {
 	adultOnly: boolean;
 	availableCoupons: boolean;
@@ -29,6 +33,7 @@ interface ItemSummary {
 	categories: Category[];
 	condition: string;
 	conditionId: string;
+	image?: Image;
 	itemAffiliateWebUrl: string;
 	itemCreationDate: string;
 	itemHref: string;
@@ -43,6 +48,7 @@ interface ItemSummary {
 	seller: Seller;
 	shippingOptions: ShippingOption[];
 	shortDescription?: string;
+	thumbnailImages?: Image[];
 	title: string;
 	topRatedBuyingExperience: boolean;
 }

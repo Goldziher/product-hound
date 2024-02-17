@@ -56,6 +56,16 @@ export async function handler(
 			productSearchParameters,
 		);
 
+		if (!ebayData) {
+			// TODO: this is a case where no results match the search.
+			// We will need to give instructions to the user - for now we simply return a placeholder.
+			// Later we will send a whatsapp message.
+			return {
+				jsonBody: { result: 'no matching data found' },
+				status: 200,
+			};
+		}
+
 		const result = await createRecommendationQuery(query, ebayData);
 
 		return { jsonBody: result, status: 201 };

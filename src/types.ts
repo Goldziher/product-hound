@@ -10,8 +10,10 @@ export interface NormalizedProductData {
 	condition: string;
 	currency: string;
 	id: string;
+	image?: string;
 	price: string;
-	shortDescription: string;
+	shortDescription?: string;
+	thumbnails?: string[];
 	title: string;
 	url: string;
 }

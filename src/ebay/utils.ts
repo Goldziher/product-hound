@@ -23,8 +23,10 @@ export function parseEbayResponse({
 				conditionId,
 				categories,
 				itemAffiliateWebUrl,
-				shortDescription = '',
+				shortDescription,
 				itemId,
+				thumbnailImages,
+				image,
 			},
 		) => {
 			acc[itemId] = {
@@ -33,8 +35,10 @@ export function parseEbayResponse({
 					conditionIdMap[conditionId as keyof typeof conditionIdMap],
 				currency,
 				id: itemId,
+				image: image?.imageUrl,
 				price: value,
 				shortDescription,
+				thumbnails: thumbnailImages?.map(({ imageUrl }) => imageUrl),
 				title,
 				url: itemAffiliateWebUrl,
 			};

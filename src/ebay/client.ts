@@ -19,52 +19,70 @@ const EBAY_API_BASE_URL_PRODUCTION = 'https://api.ebay.com';
 const EBAY_API_BASE_URL_SANDBOX = 'https://api.sandbox.ebay.com';
 
 const isErrResponse = (
-	value: EbayBrowseItemsErrorResponse | EbayBrowseItemsSuccessResponse,
+	value:
+		| EbayBrowseItemsErrorResponse
+		| EbayBrowseItemsSuccessResponse
+		| Record<string, never>,
 ): value is EbayBrowseItemsErrorResponse => Reflect.has(value, 'warnings');
 
+const isSuccessResponse = (
+	value: EbayBrowseItemsSuccessResponse | Record<string, never>,
+): value is EbayBrowseItemsSuccessResponse =>
+	Reflect.has(value, 'itemSummaries');
+
 export class EbayClient {
-	private readonly ebayCampaignId: string;
 	private readonly auth: EbayAuthToken;
 	private readonly baseUrl: string;
+	private readonly ebayCampaignId: string;
+	private readonly ebayEnv: 'PRODUCTION' | 'SANDBOX';
 
 	private apiAccessToken: { expiration: number; value: string } | null = null;
 
 	constructor() {
+		const ebayEnv = process.env.EBAY_ENV as
+			| 'PRODUCTION'
+			| 'SANDBOX'
+			| undefined;
+
+		if (!ebayEnv) {
+			throw new Error('EBAY_ENV environment variable is not set');
+		}
+		this.ebayEnv = ebayEnv;
+
 		const ebayCampaignId = process.env.EBAY_CAMPAIGN_ID;
 		if (!ebayCampaignId) {
 			throw new Error('EBAY_CAMPAIGN_ID environment variable is not set');
 		}
 		this.ebayCampaignId = ebayCampaignId;
 
-		const clientSecret = process.env.EBAY_CLIENT_SECRET;
+		const clientSecret = process.env[`EBAY_${ebayEnv}_CLIENT_SECRET`];
 		if (!clientSecret) {
 			throw new Error(
 				'EBAY_CLIENT_SECRET environment variable is not set',
 			);
 		}
-		const clientId = process.env.EBAY_CLIENT_ID;
+
+		const clientId = process.env[`EBAY_${ebayEnv}_CLIENT_ID`];
 		if (!clientId) {
 			throw new Error('EBAY_CLIENT_ID environment variable is not set');
 		}
-		const redirectUri = process.env.EBAY_REDIRECT_URI;
+
+		const redirectUri = process.env[`EBAY_${ebayEnv}_REDIRECT_URI`];
 		if (!redirectUri) {
 			throw new Error(
 				'EBAY_REDIRECT_URI environment variable is not set',
 			);
 		}
 
-		const env =
-			process.env.NODE_ENV === 'production' ? 'PRODUCTION' : 'SANDBOX';
-
 		this.auth = new EbayAuthToken({
 			clientId,
 			clientSecret,
-			env,
+			env: ebayEnv,
 			redirectUri,
 		});
 
 		this.baseUrl =
-			process.env.NODE_ENV === 'production'
+			ebayEnv === 'PRODUCTION'
 				? EBAY_API_BASE_URL_PRODUCTION
 				: EBAY_API_BASE_URL_SANDBOX;
 	}
@@ -77,9 +95,7 @@ export class EbayClient {
 			return this.apiAccessToken.value;
 		}
 
-		const encodedToken = await this.auth.getApplicationToken(
-			process.env.NODE_ENV === 'production' ? 'PRODUCTION' : 'SANDBOX',
-		);
+		const encodedToken = await this.auth.getApplicationToken(this.ebayEnv);
 		const { access_token, expires_in } = JSON.parse(encodedToken) as {
 			access_token: string;
 			expires_in: number;
@@ -131,10 +147,10 @@ export class EbayClient {
 			q: `(${keywords.join(', ')})`,
 		};
 
-		console.log(queryParams.q);
-
 		const response = await fetcher<
-			EbayBrowseItemsSuccessResponse | EbayBrowseItemsErrorResponse
+			| EbayBrowseItemsSuccessResponse
+			| EbayBrowseItemsErrorResponse
+			| Record<string, never>
 		>({
 			headers: {
 				Authorization: `Bearer ${await this.getToken()}`,
@@ -145,7 +161,6 @@ export class EbayClient {
 			queryParams,
 			url: this.baseUrl + EBAY_BROWSE_API_ITEMS_SUMMARY_ENDPOINT,
 		});
-		console.log(response);
 
 		if (isErrResponse(response)) {
 			context.debug('ebay warnings', response.warnings);
@@ -155,6 +170,10 @@ export class EbayClient {
 			);
 		}
 
-		return parseEbayResponse(response);
+		if (isSuccessResponse(response)) {
+			return parseEbayResponse(response);
+		}
+
+		return null;
 	}
 }

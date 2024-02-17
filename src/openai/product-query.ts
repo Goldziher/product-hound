@@ -4,15 +4,9 @@ import type {
 } from '@azure/openai';
 
 import { getOpenAIClient } from '@/openai/client.js';
+import { ModelDeployments } from '@/openai/enums.js';
 import { FindProductsParameters } from '@/types.js';
 import { UnknownError } from '@/utils/errors.js';
-
-/*
- * The deployment name is set in the Azure AI Studio
- *
- * see: https://oai.azure.com/portal/5f4cfe9e11a347b9b92a0de3c1b20296/deployment?tenantid=ef241226-ef98-4c54-92c4-4aa4067a467d
- * */
-const deploymentName = 'products-query-tools-ai';
 
 /*
  * OpenAI tool definitions
@@ -136,7 +130,7 @@ export async function createProductQuery(
 	} satisfies ChatRequestMessage;
 
 	const response = await getOpenAIClient().getChatCompletions(
-		deploymentName,
+		ModelDeployments.GPT_4,
 		[...createProductQuerySystemMessages, userMessage],
 		{ tools },
 	);
