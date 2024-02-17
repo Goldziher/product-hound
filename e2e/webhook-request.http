@@ -1,0 +1,4 @@
+POST http://localhost:7071/api/whatsapp-bot
+Content-Type: application/json
+
+["please find me a new iphone mini"]

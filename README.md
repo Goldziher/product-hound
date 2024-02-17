@@ -79,3 +79,9 @@
      pnpm build
      pnpm start
     ```
+
+4. Send requests to the function, for example:
+
+    ```shell
+    curl -i -X POST http://localhost:7071/api/whatsapp-bot -H 'Content-Type: application/json' -d '["please find me a new iphone mini"]'
+    ```
