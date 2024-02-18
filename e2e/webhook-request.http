@@ -1,4 +1,4 @@
-POST http://localhost:7071/api/whatsapp-bot
+POST http://localhost:7071/api/basemind-whatsapp-webhook
 Content-Type: application/json
 
 ["please find me a new iphone mini"]
