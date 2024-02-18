@@ -14,7 +14,7 @@ import { parseWebhookRequest } from '@/whatsapp/webhooks/utils.js';
 const ebayClient = new EbayClient();
 
 const isWebhookRequest = (value: unknown): value is WhatsAppWebHookRequest =>
-	Reflect.has(value as Record<string, any>, 'changes');
+	Reflect.has(value as Record<string, any>, 'entry');
 
 export async function handler(
 	request: HttpRequest,
@@ -29,30 +29,6 @@ export async function handler(
 			'parsed webhook request',
 			JSON.stringify(userMessageMapping),
 		);
-
-		// const data = parseWebhookRequest(payload);
-
-		// try {
-		// 	const data = await createProductQuery(payload);
-		// 	context.log(
-		// 		`received request url: "${request.url}", resulting-query: "${JSON.stringify(data)}"`,
-		// 	);
-		//
-		// 	return { body: data, status: 201 };
-		// } catch (error) {
-		// 	context.error('error communicating with openAI');
-		// 	return {
-		// 		body: (error as Error).message,
-		// 		status: 500,
-		// 	};
-		// }
-
-		// const response = await client.template({
-		// 	template: {
-		// 		name: 'greeting_message',
-		// 	},
-		// 	to: '+972502909914',
-		// });
 
 		try {
 			const data = await createProductQuery(
@@ -112,7 +88,7 @@ export async function handler(
 	};
 }
 
-app.http('basemind-whatsapp-webhook', {
+app.http('whatsapp-webhook', {
 	authLevel: 'anonymous',
 	handler,
 	methods: ['POST'],

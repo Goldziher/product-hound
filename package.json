@@ -9,13 +9,13 @@
 		"clean": "rm -rf dist",
 		"format": "prettier --write .",
 		"lint": "eslint --fix '**/*.{ts,mts}'",
-		"postinstall": "husky",
-		"prepare": "husky",
+		"postinstall": "husky || true",
+		"prepare": "husky || true",
 		"prestart": "pnpm run clean && pnpm run build",
 		"start": "func start",
 		"test": "vitest",
 		"watch": "concurrently --kill-others \"tsc -w --project tsconfig.build.json\" \"tsc-alias -w\" \"func start\"",
-		"sync-settings": "func azure functionapp publish basemind-whatsapp-webhook --publish-settings-only"
+		"sync-settings": "func azure functionapp publish basemind --publish-settings-only"
 	},
 	"dependencies": {
 		"@azure/functions": "^4.2.0",
