@@ -5,6 +5,7 @@ import {
 	InvocationContext,
 } from '@azure/functions';
 
+import { Cache } from '@/cache/index.js';
 import { HttpStatus } from '@/constants/generic.js';
 import { EbayClient } from '@/ebay/client.js';
 import { createProductQuery } from '@/openai/product-query.js';
@@ -18,6 +19,8 @@ import {
 
 const ebayClient = new EbayClient();
 const whatsAppClient = new WhatsAppClient();
+const cache = new Cache();
+
 const whatsAppVerificationToken = process.env.WHATSAPP_VERIFICATION_TOKEN;
 
 const isWebhookRequest = (value: unknown): value is WhatsAppWebHookRequest =>
@@ -30,6 +33,17 @@ async function handleUserMessage(
 	context.log('parsed webhook request', JSON.stringify(userMessageMapping));
 
 	try {
+		const session = await cache.get(userMessageMapping.whatsAppId);
+		if (!session) {
+			await cache.set(userMessageMapping.whatsAppId, {
+				greet: true,
+			});
+			await whatsAppClient.template({
+				template: { name: 'greeting_message' },
+				to: userMessageMapping.whatsAppId,
+			});
+		}
+
 		const data = await createProductQuery(
 			userMessageMapping.messages.map((m) => m.text),
 		);
