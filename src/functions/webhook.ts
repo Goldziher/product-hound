@@ -21,6 +21,13 @@ export async function handler(
 	request: HttpRequest,
 	context: InvocationContext,
 ): Promise<HttpResponseInit> {
+	if (request.method === 'GET') {
+		return {
+			body: 'WhatsApp webhook',
+			status: HttpStatus.OK,
+		};
+	}
+
 	const body = await request.json();
 
 	if (isWebhookRequest(body)) {
@@ -99,5 +106,5 @@ export async function handler(
 app.http('whatsapp-webhook', {
 	authLevel: 'anonymous',
 	handler,
-	methods: ['POST'],
+	methods: ['POST', 'GET'],
 });
