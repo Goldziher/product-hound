@@ -5,6 +5,7 @@ import {
 	InvocationContext,
 } from '@azure/functions';
 
+import { HttpStatus } from '@/constants/generic.js';
 import { EbayClient } from '@/ebay/client.js';
 import { createProductQuery } from '@/openai/product-query.js';
 import { createRecommendationQuery } from '@/openai/recommendation-query.js';
@@ -38,7 +39,10 @@ export async function handler(
 				context.warn(
 					'no meaningful query could be extracted from the input',
 				);
-				return { status: 400 };
+				return {
+					jsonBody: { result: 'no query' },
+					status: HttpStatus.OK,
+				};
 			}
 
 			const { query, ...productSearchParameters } = data;
@@ -61,7 +65,7 @@ export async function handler(
 				context.warn('no matching data found on ebay');
 				return {
 					jsonBody: { result: 'no matching data found' },
-					status: 200,
+					status: HttpStatus.OK,
 				};
 			}
 
@@ -74,17 +78,21 @@ export async function handler(
 
 			context.log('recommendations', JSON.stringify(recommendations));
 
-			return { jsonBody: recommendations, status: 201 };
+			return { jsonBody: recommendations, status: HttpStatus.OK };
 		} catch (error) {
 			context.error('an error occurred', JSON.stringify(error));
-			return { status: 500 };
+			return {
+				jsonBody: { error, message: 'an error occurred' },
+				status: HttpStatus.InternalServerError,
+			};
 		}
 	}
 
 	context.error('unknown request body', JSON.stringify(body));
 	return {
 		jsonBody: { body, message: 'unknown request body' },
-		status: 400,
+		// we must return 200 if we do not want whatsapp to retry sending the message
+		status: HttpStatus.OK,
 	};
 }
 

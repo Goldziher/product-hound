@@ -20,30 +20,13 @@ jobs:
               uses: actions/setup-node@v4
               with:
                   node-version: 20
-            - name: Install PNPM
-              uses: pnpm/action-setup@v3.0.0
-              id: pnpm-install
-              with:
-                  version: 8
-                  run_install: false
-            - name: Setup PNPM Cache
-              id: pnpm-cache
-              shell: bash
-              run: |
-                  echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
-            - name: Load Cached Dependencies
-              uses: actions/cache@v4
-              with:
-                  path: ${{ env.STORE_PATH }}
-                  key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
-                  restore-keys: |
-                      ${{ runner.os }}-pnpm-store-
+                  cache: 'npm'
             - name: Install
-              run: pnpm install
+              run: npm install
             - name: Build
-              run: pnpm build
+              run: npm run build
             - name: Prune
-              run: pnpm prune --prod --no-optional
+              run: npm prune --production
             - name: 'Deploy'
               uses: Azure/functions-action@v1
               id: fa

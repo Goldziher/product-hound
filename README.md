@@ -11,13 +11,12 @@
     brew install azure-functions-core-tools@4
     ```
 
-2. Install PNPM, Node 20 and the project dependencies:
+2. Install Node 20 and the project dependencies:
 
     ```shell
-    brew install pnpm
     brew install nvm
     nvm install 20 && nvm use 20
-    pnpm install
+    npm install
     ```
 
 ## Local Development
@@ -76,14 +75,14 @@
 3. Start the local development server:
 
     ```shell
-    pnpm watch
+    npm run watch
     ```
 
     Optionally if for some reason you do not want to run in watch mode, do:
 
     ```shell
-     pnpm build
-     pnpm start
+     npm run build
+     npm run start
     ```
 
 4. Send requests to the function, for example:

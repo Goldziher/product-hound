@@ -5,3 +5,9 @@ export enum HttpMethod {
 	Post = 'POST',
 	Put = 'PUT',
 }
+
+export enum HttpStatus {
+	BadRequest = 400,
+	InternalServerError = 500,
+	OK = 200,
+}

@@ -126,3 +126,68 @@ Content-Type: application/json
   ],
   "object": "whatsapp_business_account"
 }
+
+###
+
+POST https://basemind-apim.azure-api.net/api/whatsapp-webhook
+Content-Type: application/json
+
+{
+  "entry": [
+    {
+      "changes": [
+        {
+          "field": "messages",
+          "value": {
+            "contacts": [
+              {
+                "profile": {
+                  "name": "Cameron Jenkins"
+                },
+                "wa_id": "5737442182"
+              }
+            ],
+            "messages": [
+              {
+                "from": "5737442182",
+                "id": "9097bFdPs8",
+                "image": {
+                  "id": "Rz3TCcwby6",
+                  "mime_type": "image/png",
+                  "sha256": "034ffc22-1d44-4a6b-8fad-e542952084ac"
+                },
+                "timestamp": "1708270779888",
+                "type": "image"
+              },
+              {
+                "from": "5737442182",
+                "id": "BtBn6rnp2r",
+                "text": {
+                  "body": "sssaaas vomer tergeo adulatio ipsa validus creator neque eveniet talis."
+                },
+                "timestamp": "1708189424694",
+                "type": "text"
+              },
+              {
+                "from": "5737442182",
+                "id": "aA71Rd4xPL",
+                "text": {
+                  "body": "Casso aestivus circumvenio absum ulterius administratio voluptates consuasor vado."
+                },
+                "timestamp": "1708214582660",
+                "type": "text"
+              }
+            ],
+            "messaging_product": "whatsapp",
+            "metadata": {
+              "display_phone_number": "(251) 493-7182 x606",
+              "phone_number_id": "554888291"
+            }
+          }
+        }
+      ],
+      "id": "1221212-3e8f-469f-b625-b3c4b3d28f0f"
+    }
+  ],
+  "object": "whatsapp_business_account"
+}

@@ -11,7 +11,7 @@
 		"lint": "eslint --fix '**/*.{ts,mts}'",
 		"postinstall": "husky || true",
 		"prepare": "husky || true",
-		"prestart": "pnpm run clean && pnpm run build",
+		"prestart": "npm run clean && npm run build",
 		"start": "func start",
 		"test": "vitest",
 		"watch": "concurrently --kill-others \"tsc -w --project tsconfig.build.json\" \"tsc-alias -w\" \"func start\"",
@@ -28,7 +28,7 @@
 		"@commitlint/config-conventional": "^18.6.2",
 		"@faker-js/faker": "^8.4.1",
 		"@prettier/plugin-xml": "^3.3.1",
-		"@tool-belt/eslint-config": "^5.1.0",
+		"@tool-belt/eslint-config": "^5.2.0",
 		"@types/ebay-oauth-nodejs-client": "^1.2.4",
 		"@types/node": "^20.11.19",
 		"@typescript-eslint/eslint-plugin": "^7.0.1",
@@ -54,9 +54,9 @@
 		"*.{ts,js,md,mts,json,yaml,yml,xml}": "prettier --write"
 	},
 	"engines": {
-		"yarn": "please-use-pnpm",
-		"npm": "please-use-pnpm",
-		"pnpm": ">=8.0.0",
+		"yarn": "please-use-npm",
+		"npm": ">=10.4.0",
+		"pnpm": "please-use-npm",
 		"node": ">=v20.0.0"
 	}
 }
