@@ -2,65 +2,42 @@ POST http://localhost:7071/api/whatsapp-webhook
 Content-Type: application/json
 
 {
+  "object": "whatsapp_business_account",
   "entry": [
     {
+      "id": "240586499133002",
       "changes": [
         {
-          "field": "messages",
           "value": {
+            "messaging_product": "whatsapp",
+            "metadata": {
+              "display_phone_number": "14844145978",
+              "phone_number_id": "246419355213038"
+            },
             "contacts": [
               {
-                "profile": {
-                  "name": "Cameron Jenkins"
-                },
-                "wa_id": "5737442182"
+                "profile": { "name": "Naaman Hirschfeld" },
+                "wa_id": "4915731800813"
               }
             ],
             "messages": [
               {
-                "from": "5737442182",
-                "id": "9097bFdPs8",
-                "image": {
-                  "id": "Rz3TCcwby6",
-                  "mime_type": "image/png",
-                  "sha256": "034ffc22-1d44-4a6b-8fad-e542952084ac"
-                },
-                "timestamp": "1708270779888",
-                "type": "image"
-              },
-              {
-                "from": "5737442182",
-                "id": "BtBn6rnp2r",
+                "from": "4915731800813",
+                "id": "wamid.HBgNNDkxNTczMTgwMDgxMxUCABIYFDNBQTdCODIwQjQ4RUI1NzcyRjY0AA==",
+                "timestamp": "1708340381",
                 "text": {
-                  "body": "Please recommend a laptop for a 14 year old girl."
+                  "body": "hi, please recommend a laptop for a 10 year old. Not too expensive"
                 },
-                "timestamp": "1708189424694",
-                "type": "text"
-              },
-              {
-                "from": "5737442182",
-                "id": "aA71Rd4xPL",
-                "text": {
-                  "body": "Please recommend the best deal for an iPhone mini."
-                },
-                "timestamp": "1708214582660",
                 "type": "text"
               }
-            ],
-            "messaging_product": "whatsapp",
-            "metadata": {
-              "display_phone_number": "(251) 493-7182 x606",
-              "phone_number_id": "554888291"
-            }
-          }
+            ]
+          },
+          "field": "messages"
         }
-      ],
-      "id": "26991a52-3e8f-469f-b625-b3c4b3d28f0f"
+      ]
     }
-  ],
-  "object": "whatsapp_business_account"
+  ]
 }
-
 
 ###
 
@@ -68,63 +45,41 @@ POST https://basemind.azurewebsites.net/api/whatsapp-webhook
 Content-Type: application/json
 
 {
+  "object": "whatsapp_business_account",
   "entry": [
     {
+      "id": "240586499133002",
       "changes": [
         {
-          "field": "messages",
           "value": {
+            "messaging_product": "whatsapp",
+            "metadata": {
+              "display_phone_number": "14844145978",
+              "phone_number_id": "246419355213038"
+            },
             "contacts": [
               {
-                "profile": {
-                  "name": "Cameron Jenkins"
-                },
-                "wa_id": "5737442182"
+                "profile": { "name": "Naaman Hirschfeld" },
+                "wa_id": "4915731800813"
               }
             ],
             "messages": [
               {
-                "from": "5737442182",
-                "id": "9097bFdPs8",
-                "image": {
-                  "id": "Rz3TCcwby6",
-                  "mime_type": "image/png",
-                  "sha256": "034ffc22-1d44-4a6b-8fad-e542952084ac"
-                },
-                "timestamp": "1708270779888",
-                "type": "image"
-              },
-              {
-                "from": "5737442182",
-                "id": "BtBn6rnp2r",
+                "from": "4915731800813",
+                "id": "wamid.HBgNNDkxNTczMTgwMDgxMxUCABIYFDNBQTdCODIwQjQ4RUI1NzcyRjY0AA==",
+                "timestamp": "1708340381",
                 "text": {
-                  "body": "Please recommend a laptop for a 14 year old girl."
+                  "body": "hi, please recommend a laptop for a 10 year old. Not too expensive"
                 },
-                "timestamp": "1708189424694",
-                "type": "text"
-              },
-              {
-                "from": "5737442182",
-                "id": "aA71Rd4xPL",
-                "text": {
-                  "body": "Please recommend the best deal for an iPhone mini."
-                },
-                "timestamp": "1708214582660",
                 "type": "text"
               }
-            ],
-            "messaging_product": "whatsapp",
-            "metadata": {
-              "display_phone_number": "(251) 493-7182 x606",
-              "phone_number_id": "554888291"
-            }
-          }
+            ]
+          },
+          "field": "messages"
         }
-      ],
-      "id": "26991a52-3e8f-469f-b625-b3c4b3d28f0f"
+      ]
     }
-  ],
-  "object": "whatsapp_business_account"
+  ]
 }
 
 ###

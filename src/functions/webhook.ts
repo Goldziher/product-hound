@@ -67,13 +67,16 @@ async function handleUserMessage(
 
 			const datum = ebayData[id];
 
+			context.log(
+				`sending whatsapp recommendation to +${userMessageMapping.whatsAppId}`,
+				JSON.stringify(datum),
+			);
+
 			await whatsAppClient.text({
 				text: {
-					body: `${datum.title}
-					${recommendation}
+					body: `${recommendation}
 					
-					${datum.url}
-					`,
+${datum.url}`,
 				},
 				to: userMessageMapping.whatsAppId,
 			});
@@ -83,7 +86,10 @@ async function handleUserMessage(
 
 		return { message: 'success' };
 	} catch (error) {
-		context.error('an error occurred', JSON.stringify(error));
+		context.error(
+			`an unexpected error occurred: ${(error as Error).message}`,
+			{ stack: (error as Error).stack },
+		);
 
 		return { message: (error as Error).message };
 	}

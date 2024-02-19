@@ -40,6 +40,9 @@ export class WhatsAppClient {
 		data: T;
 		to: string;
 	}) {
+		if (!to.startsWith('+')) {
+			to = `+${to}`;
+		}
 		return await fetcher({
 			data: {
 				to,
