@@ -48,14 +48,33 @@ async function handleUserMessage(
 			userMessageMapping.messages.map((m) => m.text),
 		);
 		if (!data) {
+			await whatsAppClient.text({
+				text: {
+					body: "I'm sorry but I could not understand your query. Please try again.",
+				},
+				to: userMessageMapping.whatsAppId,
+			});
 			context.warn(
 				'no meaningful query could be extracted from the input',
 			);
 			return { message: 'no query' };
 		}
 
+		await whatsAppClient.text({
+			text: {
+				body: "I'm on it!",
+			},
+			to: userMessageMapping.whatsAppId,
+		});
+
 		const { query, ...productSearchParameters } = data;
 
+		await whatsAppClient.text({
+			text: {
+				body: '🔍 Searching Ebay...',
+			},
+			to: userMessageMapping.whatsAppId,
+		});
 		const ebayData = await ebayClient.search(
 			context,
 			productSearchParameters,
@@ -68,6 +87,12 @@ async function handleUserMessage(
 			context.warn('no matching data found on ebay');
 			return { message: 'no matching data found' };
 		}
+		await whatsAppClient.text({
+			text: {
+				body: '🧠 Creating Recommendations...',
+			},
+			to: userMessageMapping.whatsAppId,
+		});
 
 		context.log('ebayData', JSON.stringify(ebayData));
 
@@ -88,7 +113,9 @@ async function handleUserMessage(
 
 			await whatsAppClient.text({
 				text: {
-					body: `${recommendation}
+					body: `The following product looks like a great fit: "${datum.title}"
+					
+${recommendation}
 					
 ${datum.url}`,
 				},
