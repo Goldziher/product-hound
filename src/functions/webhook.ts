@@ -36,6 +36,9 @@ export async function handler(
 			};
 		}
 
+		context.log(
+			'verification token is valid, responding to code challenge',
+		);
 		return {
 			body: challenge,
 			status: HttpStatus.OK,
