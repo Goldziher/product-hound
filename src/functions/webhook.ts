@@ -13,6 +13,7 @@ import { WhatsAppWebHookRequest } from '@/whatsapp/webhooks/types.js';
 import { parseWebhookRequest } from '@/whatsapp/webhooks/utils.js';
 
 const ebayClient = new EbayClient();
+const whatsAppVerificationToken = process.env.WHATSAPP_VERIFICATION_TOKEN;
 
 const isWebhookRequest = (value: unknown): value is WhatsAppWebHookRequest =>
 	Reflect.has(value as Record<string, any>, 'entry');
@@ -22,8 +23,21 @@ export async function handler(
 	context: InvocationContext,
 ): Promise<HttpResponseInit> {
 	if (request.method === 'GET') {
+		// GET requests sent from WhatsApp / Facebook are verification requests
+		// see: https://developers.facebook.com/docs/graph-api/webhooks/getting-started/
+		const token = request.query.get('hub.verify_token');
+		const challenge = request.query.get('hub.challenge');
+
+		if (!token || !challenge || token !== whatsAppVerificationToken) {
+			context.error('invalid verification token');
+			return {
+				body: 'invalid verification token',
+				status: HttpStatus.Forbidden,
+			};
+		}
+
 		return {
-			body: 'WhatsApp webhook',
+			body: challenge,
 			status: HttpStatus.OK,
 		};
 	}

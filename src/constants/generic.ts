@@ -7,6 +7,7 @@ export enum HttpMethod {
 }
 
 export enum HttpStatus {
+	Forbidden = 403,
 	BadRequest = 400,
 	InternalServerError = 500,
 	OK = 200,
