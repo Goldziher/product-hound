@@ -9,14 +9,85 @@ import { HttpStatus } from '@/constants/generic.js';
 import { EbayClient } from '@/ebay/client.js';
 import { createProductQuery } from '@/openai/product-query.js';
 import { createRecommendationQuery } from '@/openai/recommendation-query.js';
+import { WhatsAppClient } from '@/whatsapp/cloud-api/client.js';
 import { WhatsAppWebHookRequest } from '@/whatsapp/webhooks/types.js';
-import { parseWebhookRequest } from '@/whatsapp/webhooks/utils.js';
+import {
+	parseWebhookRequest,
+	UserMessageMapping,
+} from '@/whatsapp/webhooks/utils.js';
 
 const ebayClient = new EbayClient();
+const whatsAppClient = new WhatsAppClient();
 const whatsAppVerificationToken = process.env.WHATSAPP_VERIFICATION_TOKEN;
 
 const isWebhookRequest = (value: unknown): value is WhatsAppWebHookRequest =>
 	Reflect.has(value as Record<string, any>, 'entry');
+
+async function handleUserMessage(
+	userMessageMapping: UserMessageMapping,
+	context: InvocationContext,
+) {
+	context.log('parsed webhook request', JSON.stringify(userMessageMapping));
+
+	try {
+		const data = await createProductQuery(
+			userMessageMapping.messages.map((m) => m.text),
+		);
+		if (!data) {
+			context.warn(
+				'no meaningful query could be extracted from the input',
+			);
+			return { message: 'no query' };
+		}
+
+		const { query, ...productSearchParameters } = data;
+
+		const ebayData = await ebayClient.search(
+			context,
+			productSearchParameters,
+		);
+
+		if (!ebayData) {
+			// TODO: this is a case where no results match the search.
+			// We will need to give instructions to the user - for now we simply return a placeholder.
+			// Later we will send a whatsapp message.
+			context.warn('no matching data found on ebay');
+			return { message: 'no matching data found' };
+		}
+
+		context.log('ebayData', JSON.stringify(ebayData));
+
+		const recommendations = await createRecommendationQuery(
+			query,
+			ebayData,
+		);
+
+		if (recommendations?.length) {
+			const [{ recommendation, id }] = recommendations;
+
+			const datum = ebayData[id];
+
+			await whatsAppClient.text({
+				text: {
+					body: `${datum.title}
+					${recommendation}
+					
+					${datum.url}
+					`,
+				},
+				to: userMessageMapping.whatsAppId,
+			});
+		}
+
+		context.log('recommendations', JSON.stringify(recommendations));
+
+		return { message: 'success' };
+	} catch (error) {
+		context.error('an error occurred', JSON.stringify(error));
+
+		return { message: (error as Error).message };
+	}
+}
 
 export async function handler(
 	request: HttpRequest,
@@ -49,67 +120,14 @@ export async function handler(
 
 	if (isWebhookRequest(body)) {
 		context.log('received webhook request', JSON.stringify(body));
-		const userMessageMapping = parseWebhookRequest(body)[0];
-		context.log(
-			'parsed webhook request',
-			JSON.stringify(userMessageMapping),
+
+		const results = await Promise.all(
+			parseWebhookRequest(body).map((userMessageMapping) =>
+				handleUserMessage(userMessageMapping, context),
+			),
 		);
 
-		try {
-			const data = await createProductQuery(
-				userMessageMapping.messages.map((m) => m.text),
-			);
-			if (!data) {
-				context.warn(
-					'no meaningful query could be extracted from the input',
-				);
-				return {
-					jsonBody: { result: 'no query' },
-					status: HttpStatus.OK,
-				};
-			}
-
-			const { query, ...productSearchParameters } = data;
-
-			context.log(
-				'extracted product search parameters',
-				JSON.stringify(productSearchParameters),
-			);
-			context.log('cleaned query', JSON.stringify(query));
-
-			const ebayData = await ebayClient.search(
-				context,
-				productSearchParameters,
-			);
-
-			if (!ebayData) {
-				// TODO: this is a case where no results match the search.
-				// We will need to give instructions to the user - for now we simply return a placeholder.
-				// Later we will send a whatsapp message.
-				context.warn('no matching data found on ebay');
-				return {
-					jsonBody: { result: 'no matching data found' },
-					status: HttpStatus.OK,
-				};
-			}
-
-			context.log('ebayData', JSON.stringify(ebayData));
-
-			const recommendations = await createRecommendationQuery(
-				query,
-				ebayData,
-			);
-
-			context.log('recommendations', JSON.stringify(recommendations));
-
-			return { jsonBody: recommendations, status: HttpStatus.OK };
-		} catch (error) {
-			context.error('an error occurred', JSON.stringify(error));
-			return {
-				jsonBody: { error, message: 'an error occurred' },
-				status: HttpStatus.InternalServerError,
-			};
-		}
+		return { jsonBody: { results }, status: HttpStatus.OK };
 	}
 
 	context.error('unknown request body', JSON.stringify(body));
