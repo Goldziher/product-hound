@@ -8,6 +8,7 @@ import {
 } from '@/ebay/types.js';
 import { parseEbayResponse } from '@/ebay/utils.js';
 import { FindProductsParameters } from '@/types.js';
+import { loadEnv } from '@/utils/env.js';
 import { ConfigurationError } from '@/utils/errors.js';
 import { fetcher } from '@/utils/fetcher.js';
 
@@ -39,40 +40,15 @@ export class EbayClient {
 	private apiAccessToken: { expiration: number; value: string } | null = null;
 
 	constructor() {
-		const ebayEnv = process.env.EBAY_ENV as
-			| 'PRODUCTION'
-			| 'SANDBOX'
-			| undefined;
+		const ebayEnv = (this.ebayEnv = loadEnv<'PRODUCTION' | 'SANDBOX'>(
+			'EBAY_ENV',
+		));
 
-		if (!ebayEnv) {
-			throw new Error('EBAY_ENV environment variable is not set');
-		}
-		this.ebayEnv = ebayEnv;
+		this.ebayCampaignId = loadEnv('EBAY_CAMPAIGN_ID');
 
-		const ebayCampaignId = process.env.EBAY_CAMPAIGN_ID;
-		if (!ebayCampaignId) {
-			throw new Error('EBAY_CAMPAIGN_ID environment variable is not set');
-		}
-		this.ebayCampaignId = ebayCampaignId;
-
-		const clientSecret = process.env[`EBAY_${ebayEnv}_CLIENT_SECRET`];
-		if (!clientSecret) {
-			throw new Error(
-				'EBAY_CLIENT_SECRET environment variable is not set',
-			);
-		}
-
-		const clientId = process.env[`EBAY_${ebayEnv}_CLIENT_ID`];
-		if (!clientId) {
-			throw new Error('EBAY_CLIENT_ID environment variable is not set');
-		}
-
-		const redirectUri = process.env[`EBAY_${ebayEnv}_REDIRECT_URI`];
-		if (!redirectUri) {
-			throw new Error(
-				'EBAY_REDIRECT_URI environment variable is not set',
-			);
-		}
+		const clientSecret = loadEnv(`EBAY_${ebayEnv}_CLIENT_SECRET`);
+		const clientId = loadEnv(`EBAY_${ebayEnv}_CLIENT_ID`);
+		const redirectUri = loadEnv(`EBAY_${ebayEnv}_REDIRECT_URI`);
 
 		this.auth = new EbayAuthToken({
 			clientId,

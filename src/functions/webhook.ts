@@ -7,10 +7,13 @@ import {
 
 import { Cache } from '@/cache/index.js';
 import { HttpStatus } from '@/constants/generic.js';
+import { WhatAppTemplateNames } from '@/constants/whatsapp.js';
 import { EbayClient } from '@/ebay/client.js';
 import { createProductQuery } from '@/openai/product-query.js';
 import { createRecommendationQuery } from '@/openai/recommendation-query.js';
+import { NormalizedProductData } from '@/types.js';
 import { WhatsAppClient } from '@/whatsapp/cloud-api/client.js';
+import { WhatsAppTemplateMessage } from '@/whatsapp/cloud-api/types.js';
 import { WhatsAppWebHookRequest } from '@/whatsapp/webhooks/types.js';
 import {
 	parseWebhookRequest,
@@ -26,6 +29,85 @@ const whatsAppVerificationToken = process.env.WHATSAPP_VERIFICATION_TOKEN;
 const isWebhookRequest = (value: unknown): value is WhatsAppWebHookRequest =>
 	Reflect.has(value as Record<string, any>, 'entry');
 
+function createEbayRecommendationMessage(
+	data: NormalizedProductData,
+	recommendation: string,
+	id: string,
+): Pick<WhatsAppTemplateMessage, 'name' | 'components'> {
+	if (data.image) {
+		return {
+			components: [
+				{
+					parameters: {
+						image: {
+							id,
+							link: data.image,
+						},
+						type: 'image',
+					},
+					type: 'header',
+				},
+				{
+					parameters: {
+						text: data.title.trim(),
+						type: 'text',
+					},
+					type: 'body',
+				},
+				{
+					parameters: {
+						text: recommendation,
+						type: 'text',
+					},
+					type: 'body',
+				},
+				{
+					index: 'First',
+					parameters: {
+						payload: data.url.replace(
+							'https://www.ebay.com/itm/',
+							'',
+						),
+						type: 'payload',
+					},
+					sub_type: 'url',
+					type: 'button',
+				},
+			],
+			name: WhatAppTemplateNames.EBAY_PRODUCT_RECOMMENDATION_WITH_IMAGE,
+		};
+	}
+
+	return {
+		components: [
+			{
+				parameters: {
+					text: data.title.trim(),
+					type: 'text',
+				},
+				type: 'header',
+			},
+			{
+				parameters: {
+					text: recommendation,
+					type: 'text',
+				},
+				type: 'body',
+			},
+			{
+				index: 'First',
+				parameters: {
+					payload: data.url.replace('https://www.ebay.com/itm/', ''),
+					type: 'payload',
+				},
+				sub_type: 'url',
+				type: 'button',
+			},
+		],
+		name: WhatAppTemplateNames.EBAY_PRODUCT_RECOMMENDATION_WITHOUT_IMAGE,
+	};
+}
+
 async function handleUserMessage(
 	userMessageMapping: UserMessageMapping,
 	context: InvocationContext,
@@ -34,12 +116,13 @@ async function handleUserMessage(
 
 	try {
 		const session = await cache.get(userMessageMapping.whatsAppId);
-		if (!session) {
+		if (!session?.greetingMessage) {
 			await cache.set(userMessageMapping.whatsAppId, {
-				greet: true,
+				...session,
+				greetingMessage: true,
 			});
 			await whatsAppClient.template({
-				template: { name: 'greeting_message' },
+				template: { name: WhatAppTemplateNames.GREETING },
 				to: userMessageMapping.whatsAppId,
 			});
 		}
@@ -48,10 +131,8 @@ async function handleUserMessage(
 			userMessageMapping.messages.map((m) => m.text),
 		);
 		if (!data) {
-			await whatsAppClient.text({
-				text: {
-					body: "I'm sorry but I could not understand your query. Please try again.",
-				},
+			await whatsAppClient.template({
+				template: { name: WhatAppTemplateNames.NO_QUERY },
 				to: userMessageMapping.whatsAppId,
 			});
 			context.warn(
@@ -81,12 +162,16 @@ async function handleUserMessage(
 		);
 
 		if (!ebayData) {
-			// TODO: this is a case where no results match the search.
-			// We will need to give instructions to the user - for now we simply return a placeholder.
-			// Later we will send a whatsapp message.
 			context.warn('no matching data found on ebay');
+			await whatsAppClient.text({
+				text: {
+					body: "I'm sorry but I didn't find any matching products. Please try again with different keywords.",
+				},
+				to: userMessageMapping.whatsAppId,
+			});
 			return { message: 'no matching data found' };
 		}
+
 		await whatsAppClient.text({
 			text: {
 				body: '🧠 Creating Recommendations...',
@@ -111,14 +196,12 @@ async function handleUserMessage(
 				JSON.stringify(datum),
 			);
 
-			await whatsAppClient.text({
-				text: {
-					body: `The following product looks like a great fit: "${datum.title}"
-					
-${recommendation}
-					
-${datum.url}`,
-				},
+			await whatsAppClient.template({
+				template: createEbayRecommendationMessage(
+					datum,
+					recommendation,
+					id,
+				),
 				to: userMessageMapping.whatsAppId,
 			});
 		}

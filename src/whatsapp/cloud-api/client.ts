@@ -1,4 +1,5 @@
 import { HttpMethod } from '@/constants/generic.js';
+import { loadEnv } from '@/utils/env.js';
 import { fetcher } from '@/utils/fetcher.js';
 import {
 	WhatsAppReactionMessage,
@@ -11,22 +12,8 @@ export class WhatsAppClient {
 	private readonly phoneNumberId: string;
 
 	constructor() {
-		const accessToken = process.env.WHATSAPP_ACCESS_TOKEN;
-		const phoneNumberId = process.env.WHATSAPP_PHONE_NUMBER_ID;
-
-		if (!accessToken) {
-			throw new Error(
-				'WHATSAPP_ACCESS_TOKEN environment variable is not set',
-			);
-		}
-		if (!phoneNumberId) {
-			throw new Error(
-				'WHATSAPP_PHONE_NUMBER_ID environment variable is not set',
-			);
-		}
-
-		this.accessToken = accessToken;
-		this.phoneNumberId = phoneNumberId;
+		this.accessToken = loadEnv('WHATSAPP_ACCESS_TOKEN');
+		this.phoneNumberId = loadEnv('WHATSAPP_PHONE_NUMBER_ID');
 	}
 
 	/*

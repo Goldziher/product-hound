@@ -1,10 +1,11 @@
 import { createClient, RedisClientType, SetOptions } from 'redis';
 
-const url = process.env.REDIS_CONNECTION_STRING;
-if (!url) {
-	throw new Error('REDIS_CONNECTION_STRING environment variable is not set');
-}
-const redisClient = await createClient<any, any, any>({ url }).connect();
+import { loadEnv } from '@/utils/env.js';
+
+const redisClient = await createClient<any, any, any>({
+	password: loadEnv('REDIS_PASSWORD'),
+	url: loadEnv('REDIS_HOST'),
+}).connect();
 
 export class Cache {
 	private client!: RedisClientType<any, any, any>;
@@ -15,7 +16,7 @@ export class Cache {
 
 	async get<T extends Record<string, any>>(key: string) {
 		const value = await this.client.get(key);
-		return value ? (JSON.parse(value) as T) : null;
+		return value ? (JSON.parse(value) as T) : undefined;
 	}
 
 	async set<T extends Record<string, any>>(

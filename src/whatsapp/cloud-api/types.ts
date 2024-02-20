@@ -1,21 +1,31 @@
-export interface WhatsAppTemplateComponent {
-	// there are other parameter types as well
-	// TODO: add them as required, see: https://github.com/WhatsApp/WhatsApp-Nodejs-SDK/blob/main/src/types/messages.ts#L157
-	parameters:
-		| {
-				text: string;
-				type: 'text';
-		  }
-		| {
-				image: {
-					caption?: string;
-					id: string;
-					link?: string;
-				};
-				type: 'image';
-		  };
-	type: 'body' | 'header' | 'footer' | 'button';
-}
+// there are other parameter types as well
+// TODO: add them as required, see: https://github.com/WhatsApp/WhatsApp-Nodejs-SDK/blob/main/src/types/messages.ts#L157
+export type WhatsAppTemplateComponent =
+	| {
+			parameters:
+				| {
+						text: string;
+						type: 'text';
+				  }
+				| {
+						image: {
+							caption?: string;
+							id: string;
+							link?: string;
+						};
+						type: 'image';
+				  };
+			type: 'body' | 'header' | 'footer';
+	  }
+	| {
+			index: 'First' | 'Second' | 'Third';
+			parameters: {
+				payload: string;
+				type: 'payload';
+			};
+			sub_type: 'quick_reply' | 'url';
+			type: 'button';
+	  };
 
 export interface WhatsAppTemplateMessage {
 	components?: WhatsAppTemplateComponent[];
