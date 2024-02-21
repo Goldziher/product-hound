@@ -5,13 +5,14 @@ import {
 	InvocationContext,
 } from '@azure/functions';
 
-import { Cache } from '@/cache/index.js';
 import { HttpStatus } from '@/constants/generic.js';
 import { WhatAppTemplateNames } from '@/constants/whatsapp.js';
 import { EbayClient } from '@/ebay/client.js';
+import { evaluateProductRecommendation } from '@/openai/evaluate-recommendation-query.js';
 import { createProductQuery } from '@/openai/product-query.js';
 import { createRecommendationQuery } from '@/openai/recommendation-query.js';
 import { NormalizedProductData } from '@/types.js';
+import { ApiError } from '@/utils/errors.js';
 import { WhatsAppClient } from '@/whatsapp/cloud-api/client.js';
 import { WhatsAppTemplateMessage } from '@/whatsapp/cloud-api/types.js';
 import { WhatsAppWebHookRequest } from '@/whatsapp/webhooks/types.js';
@@ -22,7 +23,7 @@ import {
 
 const ebayClient = new EbayClient();
 const whatsAppClient = new WhatsAppClient();
-const cache = new Cache();
+// const cache = new Cache();
 
 const whatsAppVerificationToken = process.env.WHATSAPP_VERIFICATION_TOKEN;
 
@@ -32,80 +33,136 @@ const isWebhookRequest = (value: unknown): value is WhatsAppWebHookRequest =>
 function createEbayRecommendationMessage(
 	data: NormalizedProductData,
 	recommendation: string,
-	id: string,
+	title: string,
 ): Pick<WhatsAppTemplateMessage, 'name' | 'components'> {
-	if (data.image) {
-		return {
-			components: [
-				{
-					parameters: {
-						image: {
-							id,
-							link: data.image,
-						},
-						type: 'image',
-					},
-					type: 'header',
-				},
-				{
-					parameters: {
-						text: data.title.trim(),
-						type: 'text',
-					},
-					type: 'body',
-				},
-				{
-					parameters: {
-						text: recommendation,
-						type: 'text',
-					},
-					type: 'body',
-				},
-				{
-					index: 'First',
-					parameters: {
-						payload: data.url.replace(
-							'https://www.ebay.com/itm/',
-							'',
-						),
-						type: 'payload',
-					},
-					sub_type: 'url',
-					type: 'button',
-				},
-			],
-			name: WhatAppTemplateNames.EBAY_PRODUCT_RECOMMENDATION_WITH_IMAGE,
-		};
-	}
+	// for now we do not send images - since this is too slow on the whatsapp size.
+	// TODO: experiment in using the thumbnails returned by ebay to see whether we can make this faster
+	// see: https://developer.ebay.com/api-docs/buy/browse/resources/item_summary/methods/search#h2-output
+
+	// if (false && data.image) {
+	// 	return {
+	// 		components: [
+	// 			{
+	// 				parameters: [
+	// 					{
+	// 						image: {
+	// 							link: data.image,
+	// 						},
+	// 						type: 'image',
+	// 					},
+	// 				],
+	// 				type: 'header',
+	// 			},
+	// 			{
+	// 				parameters: [
+	// 					{
+	// 						text: data.title.trim(),
+	// 						type: 'text',
+	// 					},
+	// 					{
+	// 						text: recommendation,
+	// 						type: 'text',
+	// 					},
+	// 				],
+	// 				type: 'body',
+	// 			},
+	// 			{
+	// 				index: 0,
+	// 				parameters: [
+	// 					{
+	// 						text: data.url.replace(
+	// 							'https://www.ebay.com/itm/',
+	// 							'',
+	// 						),
+	// 						type: 'text',
+	// 					},
+	// 				],
+	// 				sub_type: 'url',
+	// 				type: 'button',
+	// 			},
+	// 		],
+	// 		name: WhatAppTemplateNames.EBAY_PRODUCT_RECOMMENDATION_WITH_IMAGE,
+	// 	};
+	// }
 
 	return {
 		components: [
 			{
-				parameters: {
-					text: data.title.trim(),
-					type: 'text',
-				},
+				parameters: [
+					{
+						text:
+							title.trim().length > 80
+								? title.trim().slice(0, 80)
+								: title.trim(),
+						type: 'text',
+					},
+				],
 				type: 'header',
 			},
 			{
-				parameters: {
-					text: recommendation,
-					type: 'text',
-				},
+				parameters: [
+					{
+						text: recommendation,
+						type: 'text',
+					},
+				],
 				type: 'body',
 			},
 			{
-				index: 'First',
-				parameters: {
-					payload: data.url.replace('https://www.ebay.com/itm/', ''),
-					type: 'payload',
-				},
+				index: 0,
+				parameters: [
+					{
+						text: data.url.replace('https://www.ebay.com/itm/', ''),
+						type: 'text',
+					},
+				],
 				sub_type: 'url',
 				type: 'button',
 			},
 		],
 		name: WhatAppTemplateNames.EBAY_PRODUCT_RECOMMENDATION_WITHOUT_IMAGE,
 	};
+}
+
+async function handleRecommendation({
+	query,
+	ebayData,
+	callCount,
+}: {
+	callCount: number;
+	ebayData: Record<string, NormalizedProductData>;
+	query: string;
+}) {
+	const result = await createRecommendationQuery(
+		query,
+		Object.values(ebayData),
+	);
+
+	if (typeof result === 'string') {
+		return result;
+	}
+
+	const datum = ebayData[result.id];
+
+	const score = await evaluateProductRecommendation(datum, query);
+	if (score < 5) {
+		if (callCount < 3) {
+			const clonedData = structuredClone(ebayData);
+			// eslint-disable-next-line @typescript-eslint/no-dynamic-delete
+			delete clonedData[result.id];
+
+			if (Object.keys(clonedData).length > 0) {
+				return await handleRecommendation({
+					callCount: callCount + 1,
+					ebayData: clonedData,
+					query,
+				});
+			}
+		}
+		return "I'm sorry but I was not able to find a product matching the query. Perhaps try again with a different wording?";
+	}
+
+	return result;
 }
 
 async function handleUserMessage(
@@ -115,17 +172,17 @@ async function handleUserMessage(
 	context.log('parsed webhook request', JSON.stringify(userMessageMapping));
 
 	try {
-		const session = await cache.get(userMessageMapping.whatsAppId);
-		if (!session?.greetingMessage) {
-			await cache.set(userMessageMapping.whatsAppId, {
-				...session,
-				greetingMessage: true,
-			});
-			await whatsAppClient.template({
-				template: { name: WhatAppTemplateNames.GREETING },
-				to: userMessageMapping.whatsAppId,
-			});
-		}
+		// const session = await cache.get(userMessageMapping.whatsAppId);
+		// if (!session?.greetingMessage) {
+		// 	await cache.set(userMessageMapping.whatsAppId, {
+		// 		...session,
+		// 		greetingMessage: true,
+		// 	});
+		// 	await whatsAppClient.template({
+		// 		template: { name: WhatAppTemplateNames.GREETING },
+		// 		to: userMessageMapping.whatsAppId,
+		// 	});
+		// }
 
 		const data = await createProductQuery(
 			userMessageMapping.messages.map((m) => m.text),
@@ -140,13 +197,6 @@ async function handleUserMessage(
 			);
 			return { message: 'no query' };
 		}
-
-		await whatsAppClient.text({
-			text: {
-				body: "I'm on it!",
-			},
-			to: userMessageMapping.whatsAppId,
-		});
 
 		const { query, ...productSearchParameters } = data;
 
@@ -181,39 +231,60 @@ async function handleUserMessage(
 
 		context.log('ebayData', JSON.stringify(ebayData));
 
-		const recommendations = await createRecommendationQuery(
-			query,
+		const result = await handleRecommendation({
+			callCount: 0,
 			ebayData,
-		);
+			query,
+		});
 
-		if (recommendations?.length) {
-			const [{ recommendation, id }] = recommendations;
-
-			const datum = ebayData[id];
-
-			context.log(
-				`sending whatsapp recommendation to +${userMessageMapping.whatsAppId}`,
-				JSON.stringify(datum),
+		if (typeof result === 'string') {
+			context.warn(
+				'no recommendation found',
+				result,
+				JSON.stringify(ebayData),
 			);
-
-			await whatsAppClient.template({
-				template: createEbayRecommendationMessage(
-					datum,
-					recommendation,
-					id,
-				),
+			await whatsAppClient.text({
+				text: {
+					body: result,
+				},
 				to: userMessageMapping.whatsAppId,
 			});
+			return { message: 'no recommendation found' };
 		}
 
-		context.log('recommendations', JSON.stringify(recommendations));
+		const { recommendation, id, title } = result;
+		context.log('AI recommendation object', JSON.stringify(result));
+
+		const datum = ebayData[id];
+		context.log(
+			`sending whatsapp recommendation to +${userMessageMapping.whatsAppId}`,
+			JSON.stringify(datum),
+		);
+
+		const template = createEbayRecommendationMessage(
+			datum,
+			recommendation,
+			title,
+		);
+		context.log('template', JSON.stringify(template));
+
+		await whatsAppClient.template({
+			template,
+			to: userMessageMapping.whatsAppId,
+		});
 
 		return { message: 'success' };
 	} catch (error) {
-		context.error(
-			`an unexpected error occurred: ${(error as Error).message}`,
-			{ stack: (error as Error).stack },
-		);
+		if (error instanceof ApiError) {
+			context.error(
+				`an api error occurred: ${JSON.stringify(error, null, 2)}`,
+			);
+		} else {
+			context.error(
+				`an unexpected error occurred: ${(error as Error).message}`,
+				{ stack: (error as Error).stack },
+			);
+		}
 
 		return { message: (error as Error).message };
 	}

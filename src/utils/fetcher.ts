@@ -7,6 +7,14 @@ import {
 	PermissionError,
 } from '@/utils/errors.js';
 
+const parseJsonSafe = (value: string): string | Record<string, any> => {
+	try {
+		return JSON.parse(value) as Record<string, any>;
+	} catch {
+		return value;
+	}
+};
+
 export async function fetcher<T>({
 	url,
 	method,
@@ -40,8 +48,6 @@ export async function fetcher<T>({
 	}
 
 	const response = await fetch(path, request);
-	const body =
-		response.status === 204 ? {} : ((await response.json()) as unknown);
 
 	if (!response.ok) {
 		if (response.status === 401 || response.status === 403) {
@@ -51,17 +57,17 @@ export async function fetcher<T>({
 		}
 
 		throw new ApiError(
-			Reflect.get(
-				body as Record<string, string | undefined>,
-				'message',
-			) ?? JSON.stringify(body),
+			'an unexpected error occurred while fetching the resource',
 			{
-				context: { path, text: await response.text() },
+				context: { path, text: parseJsonSafe(await response.text()) },
 				statusCode: response.status,
 				statusText: response.statusText,
 			},
 		);
 	}
+
+	const body =
+		response.status === 204 ? {} : ((await response.json()) as unknown);
 
 	return body as T;
 }

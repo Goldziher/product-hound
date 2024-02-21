@@ -1,8 +1,8 @@
 // there are other parameter types as well
-// TODO: add them as required, see: https://github.com/WhatsApp/WhatsApp-Nodejs-SDK/blob/main/src/types/messages.ts#L157
+// see: https://developers.facebook.com/docs/whatsapp/cloud-api/reference/messages
 export type WhatsAppTemplateComponent =
 	| {
-			parameters:
+			parameters: (
 				| {
 						text: string;
 						type: 'text';
@@ -10,20 +10,21 @@ export type WhatsAppTemplateComponent =
 				| {
 						image: {
 							caption?: string;
-							id: string;
-							link?: string;
+							id?: string;
+							link: string;
 						};
 						type: 'image';
-				  };
-			type: 'body' | 'header' | 'footer';
+				  }
+			)[];
+			type: 'body' | 'header';
 	  }
 	| {
-			index: 'First' | 'Second' | 'Third';
+			index: 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9;
 			parameters: {
-				payload: string;
-				type: 'payload';
-			};
-			sub_type: 'quick_reply' | 'url';
+				text: string;
+				type: 'text';
+			}[];
+			sub_type: 'url';
 			type: 'button';
 	  };
 

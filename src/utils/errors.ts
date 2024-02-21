@@ -44,7 +44,7 @@ export class ConfigurationError extends Error {
 	}
 }
 
-export class UnknownError extends Error {
+export class RuntimeError extends Error {
 	readonly context?: Record<string, any>;
 	constructor(
 		msg: string,

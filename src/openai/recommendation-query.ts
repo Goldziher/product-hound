@@ -5,8 +5,9 @@ import type {
 
 import { getOpenAIClient } from '@/openai/client.js';
 import { ModelDeployments } from '@/openai/enums.js';
+import { productDataSchema } from '@/openai/schemas.js';
 import { NormalizedProductData, ProductRecommendation } from '@/types.js';
-import { UnknownError } from '@/utils/errors.js';
+import { RuntimeError } from '@/utils/errors.js';
 
 /*
  * OpenAI tool definitions
@@ -20,91 +21,50 @@ const tools: ChatCompletionsFunctionToolDefinition[] = [
 			name: 'sendProductRecommendation',
 			parameters: {
 				properties: {
-					recommendations: {
+					id: {
+						description: 'The unique identifier for the product',
+						type: 'string',
+					},
+					recommendation: {
 						description:
-							'An array of objects containing product recommendations',
-						items: {
-							additionalProperties: false,
-							properties: {
-								id: {
-									description:
-										'The unique identifier for the product',
-									type: 'string',
-								},
-								recommendation: {
-									description:
-										'A short, natural language recommendation explaining why the product is a good fit',
-									type: 'string',
-								},
-							},
-							required: ['id', 'recommendation'],
-							type: 'object',
-						},
-						title: 'ProductRecommendations',
-						type: 'array',
+							'A short, natural language recommendation explaining why the product is a good fit',
+						type: 'string',
+					},
+					title: {
+						description:
+							'A concise title for the product. Must be at maximum 60 characters long',
+						maxLength: 60,
+						minLength: 3,
+						type: 'string',
 					},
 				},
-				required: ['recommendations'],
+				required: ['id', 'recommendation', 'title'],
+				type: 'object',
+			},
+		},
+		type: 'function',
+	},
+	{
+		function: {
+			description: 'sends product recommendations to the user',
+			name: 'sendFailureMessage',
+			parameters: {
+				properties: {
+					message: {
+						description:
+							'A message explaining the nature of the failure in recommending a product.',
+						example:
+							"I'm sorry but I couldn't find any products that matched the query.",
+						type: 'string',
+					},
+				},
+				required: ['message'],
 				type: 'object',
 			},
 		},
 		type: 'function',
 	},
 ];
-
-const productDataSchema = {
-	$schema: 'http://json-schema.org/draft-07/schema#',
-	description: 'Schema definition for normalized product data',
-	properties: {
-		categories: {
-			description: 'List of categories the product belongs to',
-			items: {
-				type: 'string',
-			},
-			type: 'array',
-		},
-		condition: {
-			description: 'Condition of the product',
-			type: 'string',
-		},
-		currency: {
-			description: 'Currency code for the product price',
-			type: 'string',
-		},
-		id: {
-			description: 'Unique identifier for the product',
-			type: 'string',
-		},
-		price: {
-			description: 'Price of the product, represented as a number string',
-			type: 'string',
-		},
-		shortDescription: {
-			description:
-				'A short description of the product. Optional - this value is sometimes an empty string.',
-			type: 'string',
-		},
-		title: {
-			description: 'Title of the product',
-			type: 'string',
-		},
-		url: {
-			description: 'URL to the product page',
-			type: 'string',
-		},
-	},
-	required: [
-		'categories',
-		'condition',
-		'currency',
-		'id',
-		'price',
-		'title',
-		'url',
-	],
-	title: 'NormalizedProductData',
-	type: 'object',
-};
 
 const createProductQuerySystemMessages: ChatRequestMessage[] = [
 	{
@@ -116,17 +76,39 @@ const createProductQuerySystemMessages: ChatRequestMessage[] = [
 		role: 'system',
 	},
 	{
-		content: `Please identify and return up to 3 products that best match the user's request, using the "sendProductRecommendation" function.`,
+		content: `Please identify and return the best match for the user's request, using the "sendProductRecommendation" function. When selecting a product, factor in the categories of the product and evaluate their appropriateness to the query. Do not select a product that does not fit exactly the query.`,
+		role: 'system',
+	},
+	{
+		content: `If no product sufficiently matches the query, use the "sendFailureMessage" function instead.`,
 		role: 'system',
 	},
 ];
 
 export async function createRecommendationQuery(
 	query: string,
-	productMapping: Record<string, NormalizedProductData>,
+	productMapping: NormalizedProductData[],
 ) {
 	const systemProductMessage = {
-		content: `This is the array of product data from which you should select: ${JSON.stringify(productMapping, null, 2)}`,
+		content: `This is the array of product data from which you should select: ${JSON.stringify(
+			productMapping.map(
+				({
+					id,
+					categories,
+					condition,
+					price,
+					shortDescription,
+					title,
+				}) => ({
+					categories,
+					condition,
+					id,
+					price,
+					shortDescription,
+					title,
+				}),
+			),
+		)}`,
 		role: 'system',
 	} as ChatRequestMessage;
 
@@ -146,7 +128,7 @@ export async function createRecommendationQuery(
 	);
 
 	if (!response.choices.length) {
-		throw new UnknownError('No choices returned from OpenAI', response);
+		throw new RuntimeError('No choices returned from OpenAI', response);
 	}
 
 	const [{ finishReason, message }] = response.choices;
@@ -154,14 +136,16 @@ export async function createRecommendationQuery(
 	if (finishReason === 'tool_calls' && message?.toolCalls.length) {
 		const [
 			{
-				function: { arguments: params },
+				function: { arguments: params, name },
 			},
 		] = message.toolCalls;
-		const result = JSON.parse(params) as {
-			recommendations: ProductRecommendation[];
-		};
-		return result.recommendations;
+
+		if (name === 'sendFailureMessage') {
+			const { message } = JSON.parse(params) as { message: string };
+			return message;
+		}
+		return JSON.parse(params) as ProductRecommendation;
 	}
 
-	return null;
+	throw new RuntimeError('No tool calls returned from OpenAI', response);
 }

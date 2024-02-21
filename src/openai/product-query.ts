@@ -6,7 +6,7 @@ import type {
 import { getOpenAIClient } from '@/openai/client.js';
 import { ModelDeployments } from '@/openai/enums.js';
 import { FindProductsParameters } from '@/types.js';
-import { UnknownError } from '@/utils/errors.js';
+import { RuntimeError } from '@/utils/errors.js';
 
 /*
  * OpenAI tool definitions
@@ -136,7 +136,7 @@ export async function createProductQuery(
 	);
 
 	if (!response.choices.length) {
-		throw new UnknownError('No choices returned from OpenAI', response);
+		throw new RuntimeError('No choices returned from OpenAI', response);
 	}
 
 	const [{ finishReason, message }] = response.choices;

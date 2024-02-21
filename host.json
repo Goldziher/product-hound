@@ -1,7 +1,7 @@
 {
 	"extensionBundle": {
-		"id": "Microsoft.Azure.Functions.ExtensionBundle.Preview",
-		"version": "[4.11.*, 5.0.0)"
+		"id": "Microsoft.Azure.Functions.ExtensionBundle",
+		"version": "[3.*, 4.0.0)"
 	},
 	"extensions": {
 		"http": {

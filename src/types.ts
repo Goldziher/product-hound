@@ -21,4 +21,5 @@ export interface NormalizedProductData {
 export interface ProductRecommendation {
 	id: string;
 	recommendation: string;
+	title: string;
 }
