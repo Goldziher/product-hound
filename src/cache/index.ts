@@ -2,16 +2,22 @@ import { createClient, RedisClientType, SetOptions } from 'redis';
 
 import { loadEnv } from '@/utils/env.js';
 
-const redisClient = await createClient<any, any, any>({
-	password: loadEnv('REDIS_PASSWORD'),
-	url: loadEnv('REDIS_HOST'),
-}).connect();
-
 export class Cache {
 	private client!: RedisClientType<any, any, any>;
 
 	constructor() {
-		this.client = redisClient;
+		createClient<any, any, any>({
+			password: loadEnv('REDIS_PASSWORD'),
+			url: loadEnv('REDIS_HOST'),
+		})
+			.connect()
+			.then((client) => {
+				this.client = client;
+				return client;
+			})
+			.catch((error) => {
+				throw error;
+			});
 	}
 
 	async get<T extends Record<string, any>>(key: string) {

@@ -5,6 +5,7 @@ import {
 	InvocationContext,
 } from '@azure/functions';
 
+import { Cache } from '@/cache/index.js';
 import { HttpStatus } from '@/constants/generic.js';
 import { WhatAppTemplateNames } from '@/constants/whatsapp.js';
 import { EbayClient } from '@/ebay/client.js';
@@ -23,7 +24,7 @@ import {
 
 const ebayClient = new EbayClient();
 const whatsAppClient = new WhatsAppClient();
-// const cache = new Cache();
+const cache = new Cache();
 
 const whatsAppVerificationToken = process.env.WHATSAPP_VERIFICATION_TOKEN;
 
@@ -172,17 +173,18 @@ async function handleUserMessage(
 	context.log('parsed webhook request', JSON.stringify(userMessageMapping));
 
 	try {
-		// const session = await cache.get(userMessageMapping.whatsAppId);
-		// if (!session?.greetingMessage) {
-		// 	await cache.set(userMessageMapping.whatsAppId, {
-		// 		...session,
-		// 		greetingMessage: true,
-		// 	});
-		// 	await whatsAppClient.template({
-		// 		template: { name: WhatAppTemplateNames.GREETING },
-		// 		to: userMessageMapping.whatsAppId,
-		// 	});
-		// }
+		const session = await cache.get(userMessageMapping.whatsAppId);
+		if (!session?.greetingMessage) {
+			await cache.set(userMessageMapping.whatsAppId, {
+				...session,
+				greetingMessage: true,
+			});
+			await whatsAppClient.template({
+				template: { name: WhatAppTemplateNames.AD_CLICK_MESSAGE },
+				to: userMessageMapping.whatsAppId,
+			});
+			return { message: 'ad-click message sent' };
+		}
 
 		const data = await createProductQuery(
 			userMessageMapping.messages.map((m) => m.text),
