@@ -1,23 +1,24 @@
+import { InvocationContext } from '@azure/functions';
 import { createClient, RedisClientType, SetOptions } from 'redis';
 
 import { loadEnv } from '@/utils/env.js';
 
+let instance: Cache | null;
+
 export class Cache {
 	private client!: RedisClientType<any, any, any>;
 
-	constructor() {
-		createClient<any, any, any>({
+	constructor(client: RedisClientType<any, any, any>) {
+		this.client = client;
+	}
+
+	static async create() {
+		const client = await createClient<any, any, any>({
 			password: loadEnv('REDIS_PASSWORD'),
 			url: loadEnv('REDIS_HOST'),
-		})
-			.connect()
-			.then((client) => {
-				this.client = client;
-				return client;
-			})
-			.catch((error) => {
-				throw error;
-			});
+		}).connect();
+		await client.ping();
+		return new Cache(client);
 	}
 
 	async get<T extends Record<string, any>>(key: string) {
@@ -33,4 +34,12 @@ export class Cache {
 		await this.client.set(key, JSON.stringify(value), options);
 		return value;
 	}
+}
+
+export async function getCacheInstance(context: InvocationContext) {
+	if (!instance) {
+		context.log('creating cache instance');
+		instance = await Cache.create();
+	}
+	return instance;
 }

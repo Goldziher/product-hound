@@ -139,7 +139,7 @@ export class EbayClient {
 		});
 
 		if (isErrResponse(response)) {
-			context.debug('ebay warnings', response.warnings);
+			context.warn('ebay warnings', response.warnings);
 			throw new ConfigurationError(
 				'ebay API returned warnings',
 				response.warnings,

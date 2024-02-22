@@ -5,7 +5,7 @@ import {
 	InvocationContext,
 } from '@azure/functions';
 
-import { Cache } from '@/cache/index.js';
+import { getCacheInstance } from '@/cache/index.js';
 import { HttpStatus } from '@/constants/generic.js';
 import { WhatAppTemplateNames } from '@/constants/whatsapp.js';
 import { EbayClient } from '@/ebay/client.js';
@@ -24,7 +24,6 @@ import {
 
 const ebayClient = new EbayClient();
 const whatsAppClient = new WhatsAppClient();
-const cache = new Cache();
 
 const whatsAppVerificationToken = process.env.WHATSAPP_VERIFICATION_TOKEN;
 
@@ -148,10 +147,6 @@ async function handleRecommendation({
 	const datum = ebayData[result.id];
 
 	const passEvaluation = await evaluateProductRecommendation(datum, query);
-	context.debug('query', query);
-	context.debug('datum', datum);
-	context.debug('callCount', callCount);
-	context.debug('passEvaluation', passEvaluation);
 
 	if (!passEvaluation) {
 		if (callCount < 3) {
@@ -179,6 +174,7 @@ async function handleUserMessage(
 	context: InvocationContext,
 ) {
 	try {
+		const cache = await getCacheInstance(context);
 		const session = await cache.get(userMessageMapping.whatsAppId);
 		if (!session?.greetingMessage) {
 			await cache.set(userMessageMapping.whatsAppId, {
@@ -208,11 +204,6 @@ async function handleUserMessage(
 		}
 
 		const { query, ...productSearchParameters } = data;
-		context.debug('query', query);
-		context.debug(
-			'productSearchParameters',
-			JSON.stringify(productSearchParameters),
-		);
 
 		await whatsAppClient.text({
 			text: {
