@@ -21,15 +21,13 @@ const tools: ChatCompletionsFunctionToolDefinition[] = [
 			name: 'evaluateProductRecommendation',
 			parameters: {
 				properties: {
-					score: {
+					result: {
 						description:
-							'The score of the appropriateness of the product to the query. The score is between 0-10, with 0 being worst and 10 being best.',
-						maximum: 10,
-						minimum: 0,
-						type: 'number',
+							'A boolean indicating whether the given product object is a good fit for the given query.',
+						type: 'boolean',
 					},
 				},
-				required: ['score'],
+				required: ['result'],
 				type: 'object',
 			},
 		},
@@ -39,15 +37,20 @@ const tools: ChatCompletionsFunctionToolDefinition[] = [
 
 const createProductQuerySystemMessages: ChatRequestMessage[] = [
 	{
-		content: 'You are a helpful evaluation assistant.',
+		content:
+			'Your role is to assist in evaluating product recommendations.',
 		role: 'system',
 	},
 	{
-		content: `You will be a query string and an object that adhere to the following JSON schema: ${JSON.stringify(productDataSchema)}.`,
+		content: `You'll receive a query and an object conforming to this JSON schema: ${JSON.stringify(productDataSchema)}.`,
 		role: 'system',
 	},
 	{
-		content: `Please evaluate whether the object selection fits the query. Evaluate the product title, description, price and categories. Use the "evaluateProductRecommendation" function to send the evaluation result as a score. The score should be between 0 (worst) to 10 (best), with values below 5 being considered a failure.`,
+		content: `Assess if the product matches the query by evaluating its title, description, price, and categories. Use the "evaluateProductRecommendation" function to submit your verdict: return true for a good match, and false otherwise.`,
+		role: 'system',
+	},
+	{
+		content: `A suitable product must closely align with the query. For instance, if the query is 'recommend a new iPhone 15', a mobile phone would be a suitable recommendation, whereas a phone case would not.`,
 		role: 'system',
 	},
 ];
@@ -61,7 +64,7 @@ export async function evaluateProductRecommendation(
 		condition,
 	}: NormalizedProductData,
 	query: string,
-): Promise<number> {
+): Promise<boolean> {
 	const userMessage = {
 		content: `The query is '${query}' and the product data is ${JSON.stringify({ categories, condition, price, shortDescription, title })}.`,
 		role: 'user',
@@ -85,8 +88,10 @@ export async function evaluateProductRecommendation(
 				function: { arguments: params },
 			},
 		] = message.toolCalls;
-		const { score } = JSON.parse(params) as { score: number };
-		return score;
+		const { result } = JSON.parse(params) as {
+			result: boolean;
+		};
+		return result;
 	}
 
 	throw new RuntimeError('No tool calls returned from OpenAI', response);

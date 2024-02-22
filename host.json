@@ -13,6 +13,12 @@
 			"samplingSettings": {
 				"isEnabled": true
 			}
+		},
+		"logLevel": {
+			"Function": "Debug",
+			"Host.Aggregator": "Trace",
+			"Host.Results": "Error",
+			"default": "Information"
 		}
 	},
 	"version": "2.0"

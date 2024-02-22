@@ -13,7 +13,7 @@ import { evaluateProductRecommendation } from '@/openai/evaluate-recommendation-
 import { createProductQuery } from '@/openai/product-query.js';
 import { createRecommendationQuery } from '@/openai/recommendation-query.js';
 import { NormalizedProductData } from '@/types.js';
-import { ApiError } from '@/utils/errors.js';
+import { ApiError, RuntimeError } from '@/utils/errors.js';
 import { WhatsAppClient } from '@/whatsapp/cloud-api/client.js';
 import { WhatsAppTemplateMessage } from '@/whatsapp/cloud-api/types.js';
 import { WhatsAppWebHookRequest } from '@/whatsapp/webhooks/types.js';
@@ -92,8 +92,8 @@ function createEbayRecommendationMessage(
 				parameters: [
 					{
 						text:
-							title.trim().length > 80
-								? title.trim().slice(0, 80)
+							title.trim().length > 60
+								? title.trim().slice(0, 60)
 								: title.trim(),
 						type: 'text',
 					},
@@ -129,8 +129,10 @@ async function handleRecommendation({
 	query,
 	ebayData,
 	callCount,
+	context,
 }: {
 	callCount: number;
+	context: InvocationContext;
 	ebayData: Record<string, NormalizedProductData>;
 	query: string;
 }) {
@@ -145,8 +147,13 @@ async function handleRecommendation({
 
 	const datum = ebayData[result.id];
 
-	const score = await evaluateProductRecommendation(datum, query);
-	if (score < 5) {
+	const passEvaluation = await evaluateProductRecommendation(datum, query);
+	context.debug('query', query);
+	context.debug('datum', datum);
+	context.debug('callCount', callCount);
+	context.debug('passEvaluation', passEvaluation);
+
+	if (!passEvaluation) {
 		if (callCount < 3) {
 			const clonedData = structuredClone(ebayData);
 			// eslint-disable-next-line @typescript-eslint/no-dynamic-delete
@@ -155,6 +162,7 @@ async function handleRecommendation({
 			if (Object.keys(clonedData).length > 0) {
 				return await handleRecommendation({
 					callCount: callCount + 1,
+					context,
 					ebayData: clonedData,
 					query,
 				});
@@ -170,8 +178,6 @@ async function handleUserMessage(
 	userMessageMapping: UserMessageMapping,
 	context: InvocationContext,
 ) {
-	context.log('parsed webhook request', JSON.stringify(userMessageMapping));
-
 	try {
 		const session = await cache.get(userMessageMapping.whatsAppId);
 		if (!session?.greetingMessage) {
@@ -194,6 +200,7 @@ async function handleUserMessage(
 				template: { name: WhatAppTemplateNames.NO_QUERY },
 				to: userMessageMapping.whatsAppId,
 			});
+
 			context.warn(
 				'no meaningful query could be extracted from the input',
 			);
@@ -201,6 +208,11 @@ async function handleUserMessage(
 		}
 
 		const { query, ...productSearchParameters } = data;
+		context.debug('query', query);
+		context.debug(
+			'productSearchParameters',
+			JSON.stringify(productSearchParameters),
+		);
 
 		await whatsAppClient.text({
 			text: {
@@ -231,20 +243,14 @@ async function handleUserMessage(
 			to: userMessageMapping.whatsAppId,
 		});
 
-		context.log('ebayData', JSON.stringify(ebayData));
-
 		const result = await handleRecommendation({
 			callCount: 0,
+			context,
 			ebayData,
 			query,
 		});
 
 		if (typeof result === 'string') {
-			context.warn(
-				'no recommendation found',
-				result,
-				JSON.stringify(ebayData),
-			);
 			await whatsAppClient.text({
 				text: {
 					body: result,
@@ -255,20 +261,14 @@ async function handleUserMessage(
 		}
 
 		const { recommendation, id, title } = result;
-		context.log('AI recommendation object', JSON.stringify(result));
 
 		const datum = ebayData[id];
-		context.log(
-			`sending whatsapp recommendation to +${userMessageMapping.whatsAppId}`,
-			JSON.stringify(datum),
-		);
 
 		const template = createEbayRecommendationMessage(
 			datum,
 			recommendation,
 			title,
 		);
-		context.log('template', JSON.stringify(template));
 
 		await whatsAppClient.template({
 			template,
@@ -281,10 +281,20 @@ async function handleUserMessage(
 			context.error(
 				`an api error occurred: ${JSON.stringify(error, null, 2)}`,
 			);
+		} else if (error instanceof RuntimeError) {
+			context.error(
+				`a runtime error occurred: ${(error as Error).message}`,
+				{
+					context: JSON.stringify(error.context),
+					stack: (error as Error).stack,
+				},
+			);
 		} else {
 			context.error(
-				`an unexpected error occurred: ${(error as Error).message}`,
-				{ stack: (error as Error).stack },
+				`an unhandled error occurred: ${(error as Error).message}`,
+				{
+					stack: (error as Error).stack,
+				},
 			);
 		}
 
@@ -310,9 +320,6 @@ export async function handler(
 			};
 		}
 
-		context.log(
-			'verification token is valid, responding to code challenge',
-		);
 		return {
 			body: challenge,
 			status: HttpStatus.OK,
@@ -322,8 +329,6 @@ export async function handler(
 	const body = await request.json();
 
 	if (isWebhookRequest(body)) {
-		context.log('received webhook request', JSON.stringify(body));
-
 		const results = await Promise.all(
 			parseWebhookRequest(body).map((userMessageMapping) =>
 				handleUserMessage(userMessageMapping, context),
@@ -333,11 +338,10 @@ export async function handler(
 		return { jsonBody: { results }, status: HttpStatus.OK };
 	}
 
-	context.error('unknown request body', JSON.stringify(body));
 	return {
 		jsonBody: { body, message: 'unknown request body' },
 		// we must return 200 if we do not want whatsapp to retry sending the message
-		status: HttpStatus.OK,
+		status: HttpStatus.BadRequest,
 	};
 }
 
