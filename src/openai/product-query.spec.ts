@@ -24,8 +24,8 @@ describe('product query tests', () => {
 			usage: undefined,
 		});
 
-	it('should return null when all user inputs are empty', () => {
-		const result = createProductQuery(['', ' ', '   ']);
+	it('should return null when all user inputs are empty', async () => {
+		const result = await createProductQuery(['', ' ', '   ']);
 		expect(result).toBeNull();
 		expect(spy).not.toHaveBeenCalled();
 	});

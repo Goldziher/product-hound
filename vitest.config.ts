@@ -7,14 +7,13 @@ export default defineConfig({
 		coverage: {
 			exclude: [
 				...(configDefaults.coverage.exclude ?? []),
-				'gen/**/*.*',
 				'testing/**/*.*',
 				'**/*.spec.*',
 			],
 			reporter: ['text', 'cobertura'],
 		},
-		css: true,
 		environment: 'node',
 		globals: true,
+		setupFiles: ['./testing/mocks.ts'],
 	},
 });

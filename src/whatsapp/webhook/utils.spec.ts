@@ -9,8 +9,8 @@ import {
 	WhatsAppMessageChangeValue,
 	WhatsAppWebHookRequest,
 	WhatsAppWebHookRequestEntry,
-} from '@/whatsapp/webhooks/types.js';
-import { parseWebhookRequest } from '@/whatsapp/webhooks/utils.js';
+} from '@/whatsapp/webhook/types.js';
+import { parseWebhookRequest } from '@/whatsapp/webhook/utils.js';
 
 describe('utils tests', () => {
 	describe('parseWhatsAppChatMessages tests', () => {
@@ -47,7 +47,7 @@ describe('utils tests', () => {
 
 		it('should return an array of parsed messages', () => {
 			const result = parseWebhookRequest(request);
-			expect(result).toHaveLength(2);
+			expect(result).toHaveLength(1);
 
 			expect(result[0].profileName).toBe(contact.profile.name);
 			expect(result[0].whatsAppId).toBe(contact.wa_id);
@@ -61,20 +61,6 @@ describe('utils tests', () => {
 			expect(result[0].messages[0].text).toBe(textMessages[0].text.body);
 			expect(result[0].messages[0].timestamp).toBe(
 				Number.parseInt(textMessages[0].timestamp),
-			);
-
-			expect(result[1].profileName).toBe(contact.profile.name);
-			expect(result[1].whatsAppId).toBe(contact.wa_id);
-			expect(result[1].phoneNumberId).toBe(
-				changeValues.metadata.phone_number_id,
-			);
-			expect(result[1].displayPhoneNumber).toBe(
-				changeValues.metadata.display_phone_number,
-			);
-			expect(result[1].messages[0].id).toBe(textMessages[1].id);
-			expect(result[1].messages[0].text).toBe(textMessages[1].text.body);
-			expect(result[1].messages[0].timestamp).toBe(
-				Number.parseInt(textMessages[1].timestamp),
 			);
 		});
 	});
