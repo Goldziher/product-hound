@@ -1,8 +1,18 @@
 import { Analytics } from '@segment/analytics-node';
 
+import { ConfigurationError } from '@/utils/errors.js';
+
+const writeKey = process.env.SEGMENT_WRITE_KEY;
+
+if (!writeKey) {
+	throw new ConfigurationError(
+		'SEGMENT_WRITE_KEY environment variable is not set',
+	);
+}
+
 const analytics = new Analytics({
 	flushAt: 1,
-	writeKey: process.env.SEGMENT_WRITE_KEY ?? '<MY_WRITE_KEY>',
+	writeKey,
 });
 
 export const identify = async (
