@@ -26,6 +26,15 @@ export type WhatsAppTemplateComponent =
 			}[];
 			sub_type: 'url';
 			type: 'button';
+	  }
+	| {
+			index: 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9;
+			parameters: {
+				payload: string;
+				type: 'payload';
+			}[];
+			sub_type: 'quick_reply';
+			type: 'button';
 	  };
 
 export interface WhatsAppTemplateMessage {
