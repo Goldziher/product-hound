@@ -53,9 +53,9 @@ export function parseWebhookRequest(
 						timestamp: Number.parseInt(message.timestamp),
 					});
 				}
-			} else {
+			} else if (!Reflect.get(change.value, 'statuses')) {
 				context.warn(
-					'unexpected change.value.messages value',
+					'unexpected change.value',
 					JSON.stringify(change.value),
 				);
 			}

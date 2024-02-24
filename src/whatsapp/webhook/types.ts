@@ -38,6 +38,13 @@ export interface WhatsAppContact {
 	wa_id: string;
 }
 
+export interface WhatsAppStatus {
+	id: string;
+	recipient_id: string;
+	status: string;
+	timestamp: string;
+}
+
 export interface WhatsAppMessageChangeValue {
 	contacts?: WhatsAppContact[];
 	messages?: WhatsAppMessage[];
@@ -46,6 +53,7 @@ export interface WhatsAppMessageChangeValue {
 		display_phone_number: string;
 		phone_number_id: string;
 	};
+	statuses?: WhatsAppStatus[];
 }
 
 export interface WhatsAppWebHookRequestEntry {
