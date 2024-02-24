@@ -39,8 +39,8 @@ export interface WhatsAppContact {
 }
 
 export interface WhatsAppMessageChangeValue {
-	contacts: WhatsAppContact[];
-	messages: WhatsAppMessage[];
+	contacts?: WhatsAppContact[];
+	messages?: WhatsAppMessage[];
 	messaging_product: 'whatsapp';
 	metadata: {
 		display_phone_number: string;
