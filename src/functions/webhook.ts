@@ -5,6 +5,7 @@ import {
 	InvocationContext,
 } from '@azure/functions';
 
+import { identify, track } from '@/analytics/client.js';
 import { getCacheInstance } from '@/cache/index.js';
 import { HttpStatus } from '@/constants/generic.js';
 import { WhatAppTemplateNames } from '@/constants/whatsapp.js';
@@ -174,9 +175,23 @@ async function handleUserMessage(
 	context: InvocationContext,
 ) {
 	try {
+		void identify(userMessageMapping.whatsAppId, {
+			messages: userMessageMapping.messages,
+			name: userMessageMapping.profileName,
+			phone: userMessageMapping.displayPhoneNumber,
+			phoneId: userMessageMapping.phoneNumberId,
+			whatsAppId: userMessageMapping.whatsAppId,
+		});
 		const cache = await getCacheInstance(context);
 		const session = await cache.get(userMessageMapping.whatsAppId);
 		if (!session?.greetingMessage) {
+			void track(userMessageMapping.whatsAppId, 'Contact', {
+				messages: userMessageMapping.messages,
+				name: userMessageMapping.profileName,
+				phone: userMessageMapping.displayPhoneNumber,
+				phoneId: userMessageMapping.phoneNumberId,
+				whatsAppId: userMessageMapping.whatsAppId,
+			});
 			await cache.set(userMessageMapping.whatsAppId, {
 				...session,
 				greetingMessage: true,
@@ -260,7 +275,13 @@ async function handleUserMessage(
 			recommendation,
 			title,
 		);
-
+		void track(userMessageMapping.whatsAppId, 'Add to cart', {
+			messages: userMessageMapping.messages,
+			name: userMessageMapping.profileName,
+			phone: userMessageMapping.displayPhoneNumber,
+			phoneId: userMessageMapping.phoneNumberId,
+			whatsAppId: userMessageMapping.whatsAppId,
+		});
 		await whatsAppClient.template({
 			template,
 			to: userMessageMapping.whatsAppId,
