@@ -263,7 +263,7 @@ export async function whatsAppWebhookHandler(
 
 	if (isWebhookRequest(body)) {
 		const results = await Promise.all(
-			parseWebhookRequest(body).map((userMessageMapping) =>
+			parseWebhookRequest(context, body).map((userMessageMapping) =>
 				handleUserMessage(userMessageMapping, context),
 			),
 		);
