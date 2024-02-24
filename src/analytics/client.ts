@@ -1,33 +1,28 @@
 import { Analytics } from '@segment/analytics-node';
 
-import { ConfigurationError } from '@/utils/errors.js';
+import { loadEnv } from '@/utils/env.js';
 
-const writeKey = process.env.SEGMENT_WRITE_KEY;
+export class AnalyticsClient {
+	private readonly analytics: Analytics;
 
-if (!writeKey) {
-	throw new ConfigurationError(
-		'SEGMENT_WRITE_KEY environment variable is not set',
-	);
+	constructor() {
+		this.analytics = new Analytics({
+			flushAt: 1,
+			writeKey: loadEnv('SEGMENT_WRITE_KEY'),
+		});
+	}
+
+	async identify(userId: string, traits: object): Promise<void> {
+		this.analytics.identify({ traits, userId });
+		await this.analytics.flush();
+	}
+
+	async track(
+		userId: string,
+		event: string,
+		properties: object,
+	): Promise<void> {
+		this.analytics.track({ event, properties, userId });
+		await this.analytics.flush();
+	}
 }
-
-const analytics = new Analytics({
-	flushAt: 1,
-	writeKey,
-});
-
-export const identify = async (
-	userId: string,
-	traits: object,
-): Promise<void> => {
-	analytics.identify({ traits, userId });
-	await analytics.flush();
-};
-
-export const track = async (
-	userId: string,
-	event: string,
-	properties: object,
-): Promise<void> => {
-	analytics.track({ event, properties, userId });
-	await analytics.flush();
-};

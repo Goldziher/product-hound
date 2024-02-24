@@ -4,6 +4,7 @@ import {
 	WhatsAppImageMessageFactory,
 	WhatsAppTextMessageFactory,
 } from 'testing/factories.js';
+import { createAzureContext } from 'testing/utils.js';
 
 import {
 	WhatsAppMessageChangeValue,
@@ -46,7 +47,7 @@ describe('utils tests', () => {
 		} satisfies WhatsAppWebHookRequest;
 
 		it('should return an array of parsed messages', () => {
-			const result = parseWebhookRequest(request);
+			const result = parseWebhookRequest(createAzureContext(), request);
 			expect(result).toHaveLength(1);
 
 			expect(result[0].profileName).toBe(contact.profile.name);

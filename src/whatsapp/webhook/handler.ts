@@ -4,7 +4,7 @@ import {
 	InvocationContext,
 } from '@azure/functions';
 
-import { identify, track } from '@/analytics/client.js';
+import { AnalyticsClient } from '@/analytics/client.js';
 import { getCacheInstance } from '@/cache/index.js';
 import { AnalyticEvents } from '@/constants/analytics.js';
 import { HttpStatus } from '@/constants/generic.js';
@@ -25,7 +25,7 @@ import {
 
 const ebayClient = new EbayClient();
 const whatsAppClient = new WhatsAppClient();
-
+const analyticsClient = new AnalyticsClient();
 const whatsAppVerificationToken = process.env.WHATSAPP_VERIFICATION_TOKEN;
 
 const isWebhookRequest = (value: unknown): value is WhatsAppWebHookRequest =>
@@ -81,7 +81,7 @@ async function handleUserMessage(
 	context: InvocationContext,
 ) {
 	try {
-		await identify(userMessageMapping.whatsAppId, {
+		await analyticsClient.identify(userMessageMapping.whatsAppId, {
 			messages: userMessageMapping.messages,
 			name: userMessageMapping.profileName,
 			phone: userMessageMapping.displayPhoneNumber,
@@ -99,7 +99,7 @@ async function handleUserMessage(
 				template: { name: WhatAppTemplateNames.AD_CLICK_MESSAGE },
 				to: userMessageMapping.whatsAppId,
 			});
-			await track(
+			await analyticsClient.track(
 				userMessageMapping.whatsAppId,
 				AnalyticEvents.TRACK_NEW_USER,
 				{
@@ -190,7 +190,7 @@ async function handleUserMessage(
 			to: userMessageMapping.whatsAppId,
 		});
 
-		void track(
+		void analyticsClient.track(
 			userMessageMapping.whatsAppId,
 			AnalyticEvents.TRACK_USER_RECOMMENDATION,
 			{

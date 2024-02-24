@@ -6,6 +6,7 @@ import { handleValidationRequest } from '@/whatsapp/webhook/handler.js';
 
 vi.mock('@/ebay/client.js');
 vi.mock('@/whatsapp/cloud-api/client.js');
+vi.mock('@/analytics/client.js');
 
 describe('Webhook handler tests', () => {
 	describe('handleValidationRequest', () => {
