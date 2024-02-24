@@ -4,7 +4,9 @@ import {
 	InvocationContext,
 } from '@azure/functions';
 
+import { identify, track } from '@/analytics/client.js';
 import { getCacheInstance } from '@/cache/index.js';
+import { AnalyticEvents } from '@/constants/analytics.js';
 import { HttpStatus } from '@/constants/generic.js';
 import { WhatAppTemplateNames } from '@/constants/whatsapp.js';
 import { EbayClient } from '@/ebay/client.js';
@@ -79,6 +81,13 @@ async function handleUserMessage(
 	context: InvocationContext,
 ) {
 	try {
+		await identify(userMessageMapping.whatsAppId, {
+			messages: userMessageMapping.messages,
+			name: userMessageMapping.profileName,
+			phone: userMessageMapping.displayPhoneNumber,
+			phoneId: userMessageMapping.phoneNumberId,
+			whatsAppId: userMessageMapping.whatsAppId,
+		});
 		const cache = await getCacheInstance(context);
 		const session = await cache.get(userMessageMapping.whatsAppId);
 		if (!session?.greetingMessage) {
@@ -90,6 +99,17 @@ async function handleUserMessage(
 				template: { name: WhatAppTemplateNames.AD_CLICK_MESSAGE },
 				to: userMessageMapping.whatsAppId,
 			});
+			await track(
+				userMessageMapping.whatsAppId,
+				AnalyticEvents.TRACK_NEW_USER,
+				{
+					messages: userMessageMapping.messages,
+					name: userMessageMapping.profileName,
+					phone: userMessageMapping.displayPhoneNumber,
+					phoneId: userMessageMapping.phoneNumberId,
+					whatsAppId: userMessageMapping.whatsAppId,
+				},
+			);
 			return { message: 'ad-click message sent' };
 		}
 
@@ -169,6 +189,18 @@ async function handleUserMessage(
 			template,
 			to: userMessageMapping.whatsAppId,
 		});
+
+		void track(
+			userMessageMapping.whatsAppId,
+			AnalyticEvents.TRACK_USER_RECOMMENDATION,
+			{
+				messages: userMessageMapping.messages,
+				name: userMessageMapping.profileName,
+				phone: userMessageMapping.displayPhoneNumber,
+				phoneId: userMessageMapping.phoneNumberId,
+				whatsAppId: userMessageMapping.whatsAppId,
+			},
+		);
 
 		return { message: 'success' };
 	} catch (error) {
