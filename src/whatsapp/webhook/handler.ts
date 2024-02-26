@@ -14,7 +14,10 @@ import { ApiError, RuntimeError } from '@/utils/errors.js';
 import { WhatsAppClient } from '@/whatsapp/cloud-api/client.js';
 import { handleRecommendation } from '@/whatsapp/webhook/recommendation.js';
 import { WhatsAppWebHookRequest } from '@/whatsapp/webhook/types.js';
-import { getOrCreateUserSession } from '@/whatsapp/webhook/user-session.js';
+import {
+	getOrCreateUserSession,
+	UserSession,
+} from '@/whatsapp/webhook/user-session.js';
 import {
 	createEbayRecommendationMessage,
 	parseWebhookRequest,
@@ -29,6 +32,81 @@ const whatsAppVerificationToken = process.env.WHATSAPP_VERIFICATION_TOKEN;
 const isWebhookRequest = (value: unknown): value is WhatsAppWebHookRequest =>
 	Reflect.has(value as Record<string, any>, 'entry');
 
+async function handleSubscriptionChanges(
+	session: UserSession,
+	messages: Set<string>,
+): Promise<Omit<CombinedLoggingMessage, 'callId' | 'context'> | null> {
+	if (messages.has('unsubscribe')) {
+		await session.setSubscribed(false);
+		await whatsAppClient.text({
+			text: {
+				body: 'You have been unsubscribed from our service. To resubscribe, send us a message saying "resubscribe".',
+			},
+			to: session.whatsAppId,
+		});
+		return {
+			eventId: 'Unsubscribed',
+			level: 'info',
+			userId: session.whatsAppId,
+			value: {
+				userId: session.whatsAppId,
+			},
+		};
+	}
+	if (messages.has('resubscribe')) {
+		if (!session.isSubscribed) {
+			await session.setSubscribed(true);
+			await whatsAppClient.text({
+				text: {
+					body: 'You have been resubscribed to our service. To unsubscribe, send us a message saying "unsubscribe".',
+				},
+				to: session.whatsAppId,
+			});
+
+			return {
+				eventId: 'Resubscribed',
+				level: 'info',
+				userId: session.whatsAppId,
+				value: {
+					userId: session.whatsAppId,
+				},
+			};
+		}
+		await whatsAppClient.text({
+			text: {
+				body: 'You are already subscribed to our service.',
+			},
+			to: session.whatsAppId,
+		});
+		return {
+			eventId: 'AlreadySubscribed',
+			level: 'info',
+			userId: session.whatsAppId,
+			value: {
+				userId: session.whatsAppId,
+			},
+		};
+	}
+
+	if (!session.isSubscribed) {
+		await whatsAppClient.text({
+			text: {
+				body: 'You have previously unsubscribed from our service. To resubscribe, send us a message saying "resubscribe".',
+			},
+			to: session.whatsAppId,
+		});
+		return {
+			eventId: 'NotSubscribed',
+			level: 'info',
+			userId: session.whatsAppId,
+			value: {
+				userId: session.whatsAppId,
+			},
+		};
+	}
+	return null;
+}
+
 async function handleUserMessage(
 	userMessageMapping: UserMessageMapping,
 	context: InvocationContext,
@@ -42,11 +120,11 @@ async function handleUserMessage(
 			whatsAppId: userMessageMapping.whatsAppId,
 		});
 
-		const { isNewUser, session } = await getOrCreateUserSession(
+		const session = await getOrCreateUserSession(
 			userMessageMapping.whatsAppId,
 		);
 
-		if (isNewUser) {
+		if (session.isNewUser()) {
 			await whatsAppClient.template({
 				template: { name: WhatAppTemplateNames.AD_CLICK_MESSAGE },
 				to: userMessageMapping.whatsAppId,
@@ -65,51 +143,16 @@ async function handleUserMessage(
 			context.info("new user's session created");
 		}
 
-		if (
-			userMessageMapping.messages.some(
-				(m) => m.text.toLowerCase().trim() === 'unsubscribe',
-			)
-		) {
-			await session.setSubscribed(false);
-			await whatsAppClient.text({
-				text: {
-					body: 'You have been unsubscribed from our service. To resubscribe, send us a message saying "resubscribe".',
-				},
-				to: userMessageMapping.whatsAppId,
-			});
-			return {
-				eventId: 'Unsubscribed',
-				level: 'info',
-				value: {
-					userId: userMessageMapping.whatsAppId,
-				},
-			};
-		} else if (
-			userMessageMapping.messages.some(
-				(m) => m.text.toLowerCase().trim() === 'resubscribe',
-			)
-		) {
-			await session.setSubscribed(true);
-			await whatsAppClient.text({
-				text: {
-					body: 'You have been resubscribed to our service. To unsubscribe, send us a message saying "unsubscribe".',
-				},
-				to: userMessageMapping.whatsAppId,
-			});
-		} else if (!session.isSubscribed) {
-			await whatsAppClient.text({
-				text: {
-					body: 'You have previously unsubscribed from our service. To resubscribe, send us a message saying "resubscribe".',
-				},
-				to: userMessageMapping.whatsAppId,
-			});
-			return {
-				eventId: 'NotSubscribed',
-				level: 'info',
-				value: {
-					userId: userMessageMapping.whatsAppId,
-				},
-			};
+		const subscriptionChanges = await handleSubscriptionChanges(
+			session,
+			new Set(
+				userMessageMapping.messages.map((m) =>
+					m.text.trim().toLowerCase(),
+				),
+			),
+		);
+		if (subscriptionChanges) {
+			return subscriptionChanges;
 		}
 
 		const data = await createProductQuery(
@@ -117,7 +160,7 @@ async function handleUserMessage(
 		);
 		if (!data) {
 			// if this is a new user, he or she just saw the greeting message with instructions, so we do not need to send this.
-			if (!isNewUser) {
+			if (!session.isNewUser()) {
 				await whatsAppClient.template({
 					template: { name: WhatAppTemplateNames.NO_QUERY },
 					to: userMessageMapping.whatsAppId,
@@ -127,6 +170,7 @@ async function handleUserMessage(
 			return {
 				eventId: 'NoQueryExtractedFromMessages',
 				level: 'warn',
+				userId: session.whatsAppId,
 				value: {
 					messages: userMessageMapping.messages,
 					userId: userMessageMapping.whatsAppId,
@@ -140,6 +184,7 @@ async function handleUserMessage(
 			context,
 			eventId: 'QueryExtractedFromMessages',
 			level: 'info',
+			userId: session.whatsAppId,
 			value: {
 				messages: userMessageMapping.messages,
 				productSearchParameters,
@@ -169,6 +214,7 @@ async function handleUserMessage(
 			return {
 				eventId: 'NoMatchingDataFoundOnEbay',
 				level: 'warn',
+				userId: session.whatsAppId,
 				value: {
 					ebayData,
 					productSearchParameters,
@@ -189,6 +235,7 @@ async function handleUserMessage(
 			callCount: 0,
 			ebayData,
 			query,
+			session,
 		});
 
 		if (typeof result === 'string') {
@@ -236,6 +283,7 @@ async function handleUserMessage(
 		return {
 			eventId: 'RecommendationSent',
 			level: 'info',
+			userId: session.whatsAppId,
 			value: {
 				ebayData,
 				productSearchParameters,
@@ -249,16 +297,15 @@ async function handleUserMessage(
 			return {
 				eventId: error.name,
 				level: 'error',
-				value: {
-					error,
-					userId: userMessageMapping.whatsAppId,
-				},
+				userId: userMessageMapping.whatsAppId,
+				value: error,
 			};
 		}
 		return {
 			eventId:
 				error instanceof RuntimeError ? error.name : 'UnhandledError',
 			level: 'error',
+			userId: userMessageMapping.whatsAppId,
 			value: error as Error,
 		};
 	}
@@ -322,7 +369,8 @@ export async function whatsAppWebhookHandler(
 				context,
 				eventId: 'UnhandledError',
 				level: 'error',
-				value: { error },
+				userId: 'unknown',
+				value: error as Error,
 			});
 
 			return { jsonBody: error, status: HttpStatus.InternalServerError };
@@ -334,6 +382,7 @@ export async function whatsAppWebhookHandler(
 		context,
 		eventId: 'UnhandledRequestBody',
 		level: 'error',
+		userId: 'unknown',
 		value: { body },
 	});
 	return {

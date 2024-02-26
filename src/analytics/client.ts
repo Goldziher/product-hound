@@ -8,6 +8,7 @@ export interface CombinedLoggingMessage {
 	context: InvocationContext;
 	eventId: string;
 	level: 'info' | 'error' | 'debug' | 'warn';
+	userId: string;
 	value: Record<string, any>;
 }
 
@@ -37,6 +38,7 @@ export class AnalyticsClient {
 
 	async combinedLogging({
 		context,
+		userId,
 		callId,
 		eventId,
 		value,
@@ -46,11 +48,15 @@ export class AnalyticsClient {
 			level,
 			value,
 		};
-		if (value instanceof Error) {
-			data.stack = value.stack;
+		const stack = Reflect.get(data, 'stack') as string | undefined;
+		if (stack) {
+			data.stack = stack;
 		}
 
-		context[level](`${callId}: ${eventId}`, JSON.stringify(data, null, 2));
-		await this.track(callId, eventId, data);
+		context[level](
+			`${callId}: ${eventId} - ${userId}`,
+			JSON.stringify(data, null, 2),
+		);
+		await this.track(userId, eventId, { callId, ...data });
 	}
 }

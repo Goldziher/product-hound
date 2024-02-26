@@ -7,17 +7,26 @@ interface Session {
 	whatsAppId: string;
 }
 
-class UserSession implements Session {
+export class UserSession implements Session {
 	createdAt: number;
 	lastSeen: number;
 	isSubscribed: boolean;
 	whatsAppId: string;
 
-	constructor({ createdAt, lastSeen, isSubscribed, whatsAppId }: Session) {
+	constructor({
+		createdAt = Date.now(),
+		lastSeen = Date.now(),
+		isSubscribed = true,
+		whatsAppId,
+	}: Partial<Session> & { whatsAppId: string }) {
 		this.createdAt = createdAt;
 		this.lastSeen = lastSeen;
 		this.isSubscribed = isSubscribed;
 		this.whatsAppId = whatsAppId;
+	}
+
+	isNewUser() {
+		return this.createdAt === this.lastSeen;
 	}
 
 	async setSubscribed(isSubscribed: boolean) {
@@ -35,18 +44,13 @@ class UserSession implements Session {
 
 export async function getOrCreateUserSession(whatsAppId: string) {
 	const cache = await getCacheInstance();
-	let session = await cache.get<Session>(whatsAppId);
-	const isNewUser = !session;
+	const cachedSession = await cache.get<Session>(whatsAppId);
 
-	session = session
-		? { ...session, lastSeen: Date.now() }
-		: {
-				createdAt: Date.now(),
-				isSubscribed: true,
-				lastSeen: Date.now(),
-				whatsAppId,
-			};
+	const session = new UserSession({
+		...cachedSession,
+		whatsAppId,
+	});
 
 	await cache.set(whatsAppId, session);
-	return { isNewUser, session: new UserSession(session) };
+	return session;
 }

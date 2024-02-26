@@ -2,6 +2,7 @@ import { CombinedLoggingMessage } from '@/analytics/client.js';
 import { evaluateProductRecommendation } from '@/openai/evaluate-recommendation-query.js';
 import { createRecommendationQuery } from '@/openai/recommendation-query.js';
 import { NormalizedProductData, ProductRecommendation } from '@/types.js';
+import { UserSession } from '@/whatsapp/webhook/user-session.js';
 
 const NO_PRODUCTS_FOUND_MESSAGE =
 	"I'm sorry but I was not able to find a product matching the query. Perhaps try again with a different wording?";
@@ -10,10 +11,12 @@ export async function handleRecommendation({
 	query,
 	ebayData,
 	callCount,
+	session,
 }: {
 	callCount: number;
 	ebayData: Record<string, NormalizedProductData>;
 	query: string;
+	session: UserSession;
 }): Promise<{
 	loggingMessage: Omit<CombinedLoggingMessage, 'callId' | 'context'>;
 	result: string | ProductRecommendation;
@@ -28,6 +31,7 @@ export async function handleRecommendation({
 			loggingMessage: {
 				eventId: 'ModelRecommendationFailure',
 				level: 'warn',
+				userId: session.whatsAppId,
 				value: {
 					ebayData,
 					message: NO_PRODUCTS_FOUND_MESSAGE,
@@ -55,6 +59,7 @@ export async function handleRecommendation({
 					callCount: callCount + 1,
 					ebayData: clonedData,
 					query,
+					session,
 				});
 			}
 		}
@@ -63,6 +68,7 @@ export async function handleRecommendation({
 			loggingMessage: {
 				eventId: 'EvaluationRecommendationFailure',
 				level: 'warn',
+				userId: session.whatsAppId,
 				value: {
 					ebayData,
 					message: NO_PRODUCTS_FOUND_MESSAGE,
@@ -79,6 +85,7 @@ export async function handleRecommendation({
 		loggingMessage: {
 			eventId: 'RecommendationEvaluated',
 			level: 'info',
+			userId: session.whatsAppId,
 			value: {
 				ebayData,
 				query,
