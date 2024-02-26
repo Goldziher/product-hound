@@ -1,4 +1,3 @@
-import { InvocationContext } from '@azure/functions';
 import { createClient, RedisClientType, SetOptions } from 'redis';
 
 import { loadEnv } from '@/utils/env.js';
@@ -36,9 +35,8 @@ export class Cache {
 	}
 }
 
-export async function getCacheInstance(context: InvocationContext) {
+export async function getCacheInstance() {
 	if (!instance) {
-		context.log('creating cache instance');
 		instance = await Cache.create();
 	}
 	return instance;
