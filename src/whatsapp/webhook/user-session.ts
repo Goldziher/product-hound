@@ -3,7 +3,7 @@ import { getCacheInstance } from '@/cache/index.js';
 export async function getOrCreateUserSession(whatsAppId: string) {
 	const cache = await getCacheInstance();
 	let session = await cache.get(whatsAppId);
-	const isNewUser = !!session;
+	const isNewUser = !session;
 
 	session = session
 		? { ...session, lastSeen: Date.now() }
