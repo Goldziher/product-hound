@@ -42,7 +42,7 @@ async function handleUserMessage(
 			whatsAppId: userMessageMapping.whatsAppId,
 		});
 
-		const { isNewUser } = await getOrCreateUserSession(
+		const { isNewUser, session } = await getOrCreateUserSession(
 			userMessageMapping.whatsAppId,
 		);
 
@@ -63,6 +63,53 @@ async function handleUserMessage(
 				},
 			);
 			context.info("new user's session created");
+		}
+
+		if (
+			userMessageMapping.messages.some(
+				(m) => m.text.toLowerCase().trim() === 'unsubscribe',
+			)
+		) {
+			await session.setSubscribed(false);
+			await whatsAppClient.text({
+				text: {
+					body: 'You have been unsubscribed from our service. To resubscribe, send us a message saying "resubscribe".',
+				},
+				to: userMessageMapping.whatsAppId,
+			});
+			return {
+				eventId: 'Unsubscribed',
+				level: 'info',
+				value: {
+					userId: userMessageMapping.whatsAppId,
+				},
+			};
+		} else if (
+			userMessageMapping.messages.some(
+				(m) => m.text.toLowerCase().trim() === 'resubscribe',
+			)
+		) {
+			await session.setSubscribed(true);
+			await whatsAppClient.text({
+				text: {
+					body: 'You have been resubscribed to our service. To unsubscribe, send us a message saying "unsubscribe".',
+				},
+				to: userMessageMapping.whatsAppId,
+			});
+		} else if (!session.isSubscribed) {
+			await whatsAppClient.text({
+				text: {
+					body: 'You have previously unsubscribed from our service. To resubscribe, send us a message saying "resubscribe".',
+				},
+				to: userMessageMapping.whatsAppId,
+			});
+			return {
+				eventId: 'NotSubscribed',
+				level: 'info',
+				value: {
+					userId: userMessageMapping.whatsAppId,
+				},
+			};
 		}
 
 		const data = await createProductQuery(
@@ -112,7 +159,7 @@ async function handleUserMessage(
 			productSearchParameters,
 		);
 
-		if (!ebayData) {
+		if (!ebayData || Object.keys(ebayData).length === 0) {
 			await whatsAppClient.text({
 				text: {
 					body: "I'm sorry but I didn't find any matching products. Please try again with different keywords.",
