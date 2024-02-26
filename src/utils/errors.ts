@@ -17,6 +17,7 @@ export class ApiError extends Error {
 	) {
 		super(msg);
 		Object.setPrototypeOf(this, ApiError.prototype);
+		this.name = 'ApiError';
 
 		this.statusCode = statusCode;
 		this.statusText = statusText;
@@ -28,6 +29,7 @@ export class PermissionError extends Error {
 	constructor(msg: string) {
 		super(msg);
 		Object.setPrototypeOf(this, PermissionError.prototype);
+		this.name = 'PermissionError';
 	}
 }
 
@@ -39,6 +41,7 @@ export class ConfigurationError extends Error {
 	) {
 		super(msg);
 		Object.setPrototypeOf(this, ConfigurationError.prototype);
+		this.name = 'ConfigurationError';
 
 		this.context = context;
 	}
@@ -52,6 +55,7 @@ export class RuntimeError extends Error {
 	) {
 		super(msg);
 		Object.setPrototypeOf(this, ConfigurationError.prototype);
+		this.name = 'RuntimeError';
 
 		this.context = context;
 	}
