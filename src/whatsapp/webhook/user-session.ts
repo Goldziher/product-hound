@@ -23,7 +23,13 @@ class UserSession implements Session {
 	async setSubscribed(isSubscribed: boolean) {
 		const cache = await getCacheInstance();
 		this.isSubscribed = isSubscribed;
-		await cache.set(this.whatsAppId, this);
+
+		await cache.set(this.whatsAppId, {
+			createdAt: this.createdAt,
+			isSubscribed: this.isSubscribed,
+			lastSeen: this.lastSeen,
+			whatsAppId: this.whatsAppId,
+		});
 	}
 }
 
