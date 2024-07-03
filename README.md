@@ -1,4 +1,14 @@
-# bot
+# Product Hound
+
+This repository includes the first iteration of a product recommendation chatbot. 
+
+Stack:
+
+- Whatsapp for the user facing functionality.
+- Azure functions for the backend components
+- OpenAI for the chatbot functionalities.
+
+The code is written in TypeScript. 
 
 ## Installation
 
